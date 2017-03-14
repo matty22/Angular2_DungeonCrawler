@@ -1,3 +1,4 @@
-<div (window:keydown)="movePlayer($event)">
-  <canvas id="dungeonMap" width="1000" height="600" (keydown)="movePlayer(key)"></canvas>
+<!--<div id="playerStats">Player HP: {{ player.health }}<br>Player XP: {{ player.xp }}<br>Current Weapon: {{ player.weapon }}</div>-->
+<div id="canvasContainer" (click)="colorCell($event)" (window:keydown)="movePlayer($event)">
+  <canvas id="dungeonMap" width="860" height="640" (keydown)="movePlayer(key)"></canvas>
 </div>
