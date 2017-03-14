@@ -4,4 +4,5 @@ export class Player {
   minAttack:number;
   maxAttack:number;
   weapon:string;
+  hasKey: boolean;
 }
