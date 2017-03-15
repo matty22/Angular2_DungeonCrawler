@@ -26,6 +26,18 @@ export class AppComponent implements OnInit {
           currentRoom: 1,
           hasKey: false
         }
+  enemiesLvl1: Enemy[] = [
+      { health: 10, minAttack: 4, maxAttack: 6, location: [] },
+      { health: 10, minAttack: 4, maxAttack: 6, location: [] },
+      { health: 10, minAttack: 4, maxAttack: 6, location: [] },
+      { health: 10, minAttack: 4, maxAttack: 6, location: [] },
+      { health: 10, minAttack: 4, maxAttack: 6, location: [] },
+      { health: 10, minAttack: 4, maxAttack: 6, location: [] },
+      { health: 10, minAttack: 4, maxAttack: 6, location: [] },
+      { health: 10, minAttack: 4, maxAttack: 6, location: [] },
+      { health: 10, minAttack: 4, maxAttack: 6, location: [] },
+      { health: 10, minAttack: 4, maxAttack: 6, location: [] },
+    ];
   keyTile: number[];
   weaponTile: number[];
   potionTiles: Array<Array<number>> = [];
@@ -194,24 +206,11 @@ export class AppComponent implements OnInit {
 
   placeEnemies() {
     // Generate 10 enemies and randomly place them on the canvas
-    var enemiesLvl1: Enemy[] = [
-      { health: 10, minAttack: 3, maxAttack: 4, location: [] },
-      { health: 10, minAttack: 3, maxAttack: 4, location: [] },
-      { health: 10, minAttack: 3, maxAttack: 4, location: [] },
-      { health: 10, minAttack: 3, maxAttack: 4, location: [] },
-      { health: 10, minAttack: 3, maxAttack: 4, location: [] },
-      { health: 10, minAttack: 3, maxAttack: 4, location: [] },
-      { health: 10, minAttack: 3, maxAttack: 4, location: [] },
-      { health: 10, minAttack: 3, maxAttack: 4, location: [] },
-      { health: 10, minAttack: 3, maxAttack: 4, location: [] },
-      { health: 10, minAttack: 3, maxAttack: 4, location: [] },
-    ];
-
-    for(let i = 0; i < enemiesLvl1.length; i++) {
-      enemiesLvl1[i].location = this.placeItemInRoom();
-      this.enemyTiles.push(enemiesLvl1[i].location);
+    for(let i = 0; i < this.enemiesLvl1.length; i++) {
+      this.enemiesLvl1[i].location = this.placeItemInRoom();
+      this.enemyTiles.push(this.enemiesLvl1[i].location);
       this.ctx.fillStyle = "purple";
-      this.ctx.fillRect(enemiesLvl1[i].location[0] * 10, enemiesLvl1[i].location[1] * 10, 10, 10);
+      this.ctx.fillRect(this.enemiesLvl1[i].location[0] * 10, this.enemiesLvl1[i].location[1] * 10, 10, 10);
     }
   }
 
@@ -259,6 +258,26 @@ export class AppComponent implements OnInit {
             this.playerLocation[0] += 1;
             this.ctx.fillStyle = "green";
             this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+            // Enemy hits between 4-6 damage. Need to add level multiplier to this
+            var enemyHit = Math.floor(Math.random() * (this.enemiesLvl1[0].maxAttack - this.enemiesLvl1[0].minAttack + 1)) + this.enemiesLvl1[0].minAttack;
+            this.player.health = this.player.health - enemyHit;
+            // If the player dies, end the game
+            if (this.player.health <= 0) {
+              // Add Game Over functionality here
+              console.log("Game Over!");
+            }
+            // Player hits between a range of damage * player level
+            var playerHit = Math.floor(Math.random() * (this.player.maxAttack * this.player.level - this.player.minAttack * this.player.level + 1)) + this.player.minAttack * this.player.level;
+            this.enemiesLvl1[0].health = this.enemiesLvl1[0].health - playerHit;
+            // If the enemy dies, move into his space and gain XP
+            if (this.enemiesLvl1[0].health <= 0) {
+              this.player.xp += 10;
+              this.ctx.fillStyle = "gray";
+              this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+              this.playerLocation[0] -= 1;
+              this.ctx.fillStyle = "green";
+              this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+            }
           }
           // If the space the player is moving into is not a wall or an enemy, move player into that new space 
           else {
@@ -276,13 +295,13 @@ export class AppComponent implements OnInit {
               switch(this.player.weapon) {
                 case 'Iron Sword':
                   this.player.weapon = 'Mithril Sword';
-                  this.player.minAttack = this.player.level * 5;
-                  this.player.maxAttack = this.player.level * 7;
+                  this.player.minAttack = 5;
+                  this.player.maxAttack = 7;
                   break;
                 case 'Mithril Sword':
                   this.player.weapon = 'Excalibur';
-                  this.player.minAttack = this.player.level * 9;
-                  this.player.maxAttack = this.player.level * 12;
+                  this.player.minAttack = 9;
+                  this.player.maxAttack = 12;
                   break;
               }
             }
@@ -307,6 +326,26 @@ export class AppComponent implements OnInit {
             this.playerLocation[1] += 1;
             this.ctx.fillStyle = "green";
             this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+            // Enemy hits between 4-6 damage. Need to add level multiplier to this
+            var enemyHit = Math.floor(Math.random() * (this.enemiesLvl1[0].maxAttack - this.enemiesLvl1[0].minAttack + 1)) + this.enemiesLvl1[0].minAttack;
+            this.player.health = this.player.health - enemyHit;
+            // If the player dies, end the game
+            if (this.player.health <= 0) {
+              // Add Game Over functionality here
+              console.log("Game Over!");
+            }
+            // Player hits between a range of damage * player level
+            var playerHit = Math.floor(Math.random() * (this.player.maxAttack * this.player.level - this.player.minAttack * this.player.level + 1)) + this.player.minAttack * this.player.level;
+            this.enemiesLvl1[0].health = this.enemiesLvl1[0].health - playerHit;
+            // If the enemy dies, move into his space and gain XP
+            if (this.enemiesLvl1[0].health <= 0) {
+              this.player.xp += 10;
+              this.ctx.fillStyle = "gray";
+              this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+              this.playerLocation[1] -= 1;
+              this.ctx.fillStyle = "green";
+              this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+            }
           }
           // If the space the player is moving into is not a wall or an enemy, move player into that new space 
           else {
@@ -355,6 +394,26 @@ export class AppComponent implements OnInit {
             this.playerLocation[0] -= 1;
             this.ctx.fillStyle = "green";
             this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+            // Enemy hits between 4-6 damage. Need to add level multiplier to this
+            var enemyHit = Math.floor(Math.random() * (this.enemiesLvl1[0].maxAttack - this.enemiesLvl1[0].minAttack + 1)) + this.enemiesLvl1[0].minAttack;
+            this.player.health = this.player.health - enemyHit;
+            // If the player dies, end the game
+            if (this.player.health <= 0) {
+              // Add Game Over functionality here
+              console.log("Game Over!");
+            }
+            // Player hits between a range of damage * player level
+            var playerHit = Math.floor(Math.random() * (this.player.maxAttack * this.player.level - this.player.minAttack * this.player.level + 1)) + this.player.minAttack * this.player.level;
+            this.enemiesLvl1[0].health = this.enemiesLvl1[0].health - playerHit;
+            // If the enemy dies, move into his space and gain XP
+            if (this.enemiesLvl1[0].health <= 0) {
+              this.player.xp += 10;
+              this.ctx.fillStyle = "gray";
+              this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+              this.playerLocation[0] += 1;
+              this.ctx.fillStyle = "green";
+              this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+            }
           }
           // If the space the player is moving into is not a wall or an enemy, move player into that new space 
           else {
@@ -402,6 +461,26 @@ export class AppComponent implements OnInit {
             this.playerLocation[1] -= 1;
             this.ctx.fillStyle = "green";
             this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+            // Enemy hits between 4-6 damage. Need to add level multiplier to this
+            var enemyHit = Math.floor(Math.random() * (this.enemiesLvl1[0].maxAttack - this.enemiesLvl1[0].minAttack + 1)) + this.enemiesLvl1[0].minAttack;
+            this.player.health = this.player.health - enemyHit;
+            // If the player dies, end the game
+            if (this.player.health <= 0) {
+              // Add Game Over functionality here
+              console.log("Game Over!");
+            }
+            // Player hits between a range of damage * player level
+            var playerHit = Math.floor(Math.random() * (this.player.maxAttack * this.player.level - this.player.minAttack * this.player.level + 1)) + this.player.minAttack * this.player.level;
+            this.enemiesLvl1[0].health = this.enemiesLvl1[0].health - playerHit;
+            // If the enemy dies, move into his space and gain XP
+            if (this.enemiesLvl1[0].health <= 0) {
+              this.player.xp += 10;
+              this.ctx.fillStyle = "gray";
+              this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+              this.playerLocation[1] += 1;
+              this.ctx.fillStyle = "green";
+              this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+            }
           }
           // If the space the player is moving into is not a wall or an enemy, move player into that new space 
           else {
@@ -507,6 +586,25 @@ export class AppComponent implements OnInit {
 // Combine this into a function named drawPlayer()
 // this.ctx.fillStyle = "green";
 // this.ctx.fillRect(this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);)
+
+
+/***** TODO *****/
+
+  // - Add level up function when player reaches 100XP
+  // - Add level multiplier for enemy damage to Player
+  // - Add game over functionality
+  // - Add final boss
+  // - Add doors to stairwell
+  // - Add door unlocking with key functionality
+  // - Add stairwell
+  // - Add functionality to regenerate map upon reaching another floor
+  // - Add shadow functionality
+  // - Add a legend
+  // - Skin dungeon with patterns rather than flat colors
+  // - Add instructions area
+  // - Add story area with music
+  
+/****************/
 
 }
 
