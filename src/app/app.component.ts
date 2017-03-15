@@ -14,21 +14,21 @@ export class AppComponent implements OnInit {
   canvasWidth: number;
   canvasHeight: number;
   playerLocation: number[];
-  enemyLocation: number[];
   wallTiles: Array<Array<number>> = [];
+  enemyTiles: Array<Array<number>> = [];
   player:Player = {
           health: 50,
+          level: 1,
           xp: 0,
-          minAttack: 1,
-          maxAttack: 3,
+          minAttack: 3,
+          maxAttack: 4,
           weapon: "Iron Sword",
+          currentRoom: 1,
           hasKey: false
         }
-  enemy: Enemy = {
-          health: 10,
-          minAttack: 3,
-          maxAttack: 4
-        }
+  keyTile: number[];
+  weaponTile: number[];
+  potionTiles: Array<Array<number>> = [];
 
   ngOnInit() {
     this.canvas = <HTMLCanvasElement> document.getElementById('dungeonMap');
@@ -36,9 +36,11 @@ export class AppComponent implements OnInit {
     this.canvasWidth = 860;
     this.canvasHeight = 640;
     this.buildBoard();
-    this.buildWalls();
     this.placePlayer();
-    // this.placeEnemies();
+    this.placeEnemies();
+    this.placeKey();
+    this.placePotions();
+    this.placeWeapon();
   }
 
   // Build the game board
@@ -49,9 +51,6 @@ export class AppComponent implements OnInit {
         this.ctx.fillRect(i * 10, j * 10, 10, 10);
       }
     }
-  }
-
-  buildWalls() {
     this.buildVerticalWalls();
     this.buildHorizontalWalls();
   }
@@ -194,13 +193,50 @@ export class AppComponent implements OnInit {
   }
 
   placeEnemies() {
-    // Generate 3 enemies and randomly place them on the canvas
-    var enemy1: Enemy;
-    var enemy2: Enemy;
-    var enemy3: Enemy;
-    this.enemyLocation = [10, 10];
-    this.ctx.fillStyle = "purple";
-    this.ctx.fillRect(this.enemyLocation[0] * 10, this.enemyLocation[1] * 10, 10, 10);
+    // Generate 10 enemies and randomly place them on the canvas
+    var enemiesLvl1: Enemy[] = [
+      { health: 10, minAttack: 3, maxAttack: 4, location: [] },
+      { health: 10, minAttack: 3, maxAttack: 4, location: [] },
+      { health: 10, minAttack: 3, maxAttack: 4, location: [] },
+      { health: 10, minAttack: 3, maxAttack: 4, location: [] },
+      { health: 10, minAttack: 3, maxAttack: 4, location: [] },
+      { health: 10, minAttack: 3, maxAttack: 4, location: [] },
+      { health: 10, minAttack: 3, maxAttack: 4, location: [] },
+      { health: 10, minAttack: 3, maxAttack: 4, location: [] },
+      { health: 10, minAttack: 3, maxAttack: 4, location: [] },
+      { health: 10, minAttack: 3, maxAttack: 4, location: [] },
+    ];
+
+    for(let i = 0; i < enemiesLvl1.length; i++) {
+      enemiesLvl1[i].location = this.placeItemInRoom();
+      this.enemyTiles.push(enemiesLvl1[i].location);
+      this.ctx.fillStyle = "purple";
+      this.ctx.fillRect(enemiesLvl1[i].location[0] * 10, enemiesLvl1[i].location[1] * 10, 10, 10);
+    }
+  }
+
+  // Place a key somewhere in the dungeon
+  // Keys could be in an imp's pocket or hidden under other items, seach carefully!
+  placeKey() {
+    this.keyTile = this.placeItemInRoom();
+    this.ctx.fillStyle = "yellow";
+    this.ctx.fillRect(this.keyTile[0] * 10, this.keyTile[1] * 10, 10, 10);
+  }
+
+  // Place three health potions somewhere in the dungeon
+  placePotions() {
+    for (let i = 0; i < 3; i++) {
+      this.potionTiles.push(this.placeItemInRoom());
+      this.ctx.fillStyle = "red";
+      this.ctx.fillRect(this.potionTiles[i][0] * 10, this.potionTiles[i][1] * 10, 10, 10);
+    } 
+  }
+
+  // Place upgrade weapon somewhere in the dungeon
+  placeWeapon() {
+    this.weaponTile = this.placeItemInRoom();
+    this.ctx.fillStyle = "silver";
+    this.ctx.fillRect(this.weaponTile[0] * 10, this.weaponTile[1] * 10, 10, 10);
   }
 
   // Move player upon key press
@@ -218,10 +254,39 @@ export class AppComponent implements OnInit {
             this.ctx.fillStyle = "green";
             this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
           }
-          // If the space the player is moving into is not a wall, move player into that new space 
+          // If player collides with enemy
+          else if (JSON.stringify(this.enemyTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
+            this.playerLocation[0] += 1;
+            this.ctx.fillStyle = "green";
+            this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+          }
+          // If the space the player is moving into is not a wall or an enemy, move player into that new space 
           else {
             this.ctx.fillStyle = "green";
             this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+            // If player steps on key, add to player inventory
+            if (JSON.stringify(this.keyTile) == JSON.stringify(this.playerLocation)) {
+              this.player.hasKey = true;
+            }
+            // If player steps on potion, increase player health by 25
+            else if (JSON.stringify(this.potionTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
+              this.player.health += 25;
+            }
+            else if (JSON.stringify(this.weaponTile) == JSON.stringify(this.playerLocation)) {
+              switch(this.player.weapon) {
+                case 'Iron Sword':
+                  this.player.weapon = 'Mithril Sword';
+                  this.player.minAttack = this.player.level * 5;
+                  this.player.maxAttack = this.player.level * 7;
+                  break;
+                case 'Mithril Sword':
+                  this.player.weapon = 'Excalibur';
+                  this.player.minAttack = this.player.level * 9;
+                  this.player.maxAttack = this.player.level * 12;
+                  break;
+              }
+            }
+            this.determineCurrentRoom();
           }
           break;
 
@@ -237,10 +302,39 @@ export class AppComponent implements OnInit {
             this.ctx.fillStyle = "green";
             this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
           }
-          // If the space the player is moving into is not a wall, move player into that new space 
+          // If player collides with enemy
+          else if (JSON.stringify(this.enemyTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
+            this.playerLocation[1] += 1;
+            this.ctx.fillStyle = "green";
+            this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+          }
+          // If the space the player is moving into is not a wall or an enemy, move player into that new space 
           else {
             this.ctx.fillStyle = "green";
             this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+            // If player steps on key, add to player inventory
+            if (JSON.stringify(this.keyTile) == JSON.stringify(this.playerLocation)) {
+              this.player.hasKey = true;
+            }
+            // If player steps on potion, increase player health by 25
+            else if (JSON.stringify(this.potionTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
+              this.player.health += 25;
+            }
+            else if (JSON.stringify(this.weaponTile) == JSON.stringify(this.playerLocation)) {
+              switch(this.player.weapon) {
+                case 'Iron Sword':
+                  this.player.weapon = 'Mithril Sword';
+                  this.player.minAttack = this.player.level * 5;
+                  this.player.maxAttack = this.player.level * 7;
+                  break;
+                case 'Mithril Sword':
+                  this.player.weapon = 'Excalibur';
+                  this.player.minAttack = this.player.level * 9;
+                  this.player.maxAttack = this.player.level * 12;
+                  break;
+              }
+            }
+            this.determineCurrentRoom();
           }
           break;
         
@@ -256,10 +350,39 @@ export class AppComponent implements OnInit {
             this.ctx.fillStyle = "green";
             this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
           }
-          // If the space the player is moving into is not a wall, move player into that new space 
+          // If player collides with enemy
+          else if (JSON.stringify(this.enemyTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
+            this.playerLocation[0] -= 1;
+            this.ctx.fillStyle = "green";
+            this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+          }
+          // If the space the player is moving into is not a wall or an enemy, move player into that new space 
           else {
             this.ctx.fillStyle = "green";
             this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+            // If player steps on key, add to player inventory
+            if (JSON.stringify(this.keyTile) == JSON.stringify(this.playerLocation)) {
+              this.player.hasKey = true;
+            }
+            // If player steps on potion, increase player health by 25
+            else if (JSON.stringify(this.potionTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
+              this.player.health += 25;
+            }
+            else if (JSON.stringify(this.weaponTile) == JSON.stringify(this.playerLocation)) {
+              switch(this.player.weapon) {
+                case 'Iron Sword':
+                  this.player.weapon = 'Mithril Sword';
+                  this.player.minAttack = this.player.level * 5;
+                  this.player.maxAttack = this.player.level * 7;
+                  break;
+                case 'Mithril Sword':
+                  this.player.weapon = 'Excalibur';
+                  this.player.minAttack = this.player.level * 9;
+                  this.player.maxAttack = this.player.level * 12;
+                  break;
+              }
+            }
+            this.determineCurrentRoom();
           }
           break;
         
@@ -274,15 +397,116 @@ export class AppComponent implements OnInit {
             this.ctx.fillStyle = "green";
             this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
           }
-          // If the space the player is moving into is not a wall, move player into that new space 
+          // If player collides with enemy
+          else if (JSON.stringify(this.enemyTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
+            this.playerLocation[1] -= 1;
+            this.ctx.fillStyle = "green";
+            this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+          }
+          // If the space the player is moving into is not a wall or an enemy, move player into that new space 
           else {
             this.ctx.fillStyle = "green";
             this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+            // If player steps on key, add to player inventory
+            if (JSON.stringify(this.keyTile) == JSON.stringify(this.playerLocation)) {
+              this.player.hasKey = true;
+            }
+            // If player steps on potion, increase player health by 25
+            else if (JSON.stringify(this.potionTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
+              this.player.health += 25;
+            }
+            else if (JSON.stringify(this.weaponTile) == JSON.stringify(this.playerLocation)) {
+              switch(this.player.weapon) {
+                case 'Iron Sword':
+                  this.player.weapon = 'Mithril Sword';
+                  this.player.minAttack = this.player.level * 5;
+                  this.player.maxAttack = this.player.level * 7;
+                  break;
+                case 'Mithril Sword':
+                  this.player.weapon = 'Excalibur';
+                  this.player.minAttack = this.player.level * 9;
+                  this.player.maxAttack = this.player.level * 12;
+                  break;
+              }
+            }
+            this.determineCurrentRoom();
           }
           break;
       }
   }
+
+  determineCurrentRoom() {
+    if (this.playerLocation[0] < 21 && this.playerLocation[1] < 21) {
+      this.player.currentRoom = 1;
+    }
+    else if (this.playerLocation[0] >= 21 && this.playerLocation[0] < 43 && this.playerLocation[1] < 21) {
+      this.player.currentRoom = 2;
+    }
+    else if (this.playerLocation[0] >= 43 && this.playerLocation[0] < 65 && this.playerLocation[1] < 21) {
+      this.player.currentRoom = 3;
+    }
+    else if (this.playerLocation[0] >= 65 && this.playerLocation[1] < 21) {
+      this.player.currentRoom = 4;
+    }
+    else if (this.playerLocation[0] < 21 && this.playerLocation[1] >= 21 && this.playerLocation[1] < 43) {
+      this.player.currentRoom = 5;
+    }
+    else if (this.playerLocation[0] >= 21 && this.playerLocation[0] < 43 && this.playerLocation[1] >= 21 && this.playerLocation[1] < 43) {
+      this.player.currentRoom = 6;
+    }
+    else if (this.playerLocation[0] >= 43 && this.playerLocation[0] < 65 && this.playerLocation[1] >= 21 && this.playerLocation[1] < 43) {
+      this.player.currentRoom = 7;
+    }
+    else if (this.playerLocation[0] >= 65 && this.playerLocation[1] >= 21 && this.playerLocation[1] < 43) {
+      this.player.currentRoom = 8;
+    }
+    else if (this.playerLocation[0] < 21 && this.playerLocation[1] >= 43 && this.playerLocation[1] < 64) {
+      this.player.currentRoom = 9;
+    }
+    else if (this.playerLocation[0] >= 21 && this.playerLocation[0] < 43 && this.playerLocation[1] >= 43 && this.playerLocation[1] < 64) {
+      this.player.currentRoom = 10;
+    }
+    else if (this.playerLocation[0] >= 43 && this.playerLocation[0] < 65 && this.playerLocation[1] >= 43 && this.playerLocation[1] < 64) {
+      this.player.currentRoom = 11;
+    }
+    else if (this.playerLocation[0] >= 65 && this.playerLocation[1] > 42 && this.playerLocation[1] < 64) {
+      this.player.currentRoom = 12;
+    }
+  }
+
+  // Function to generate random locations for enemies and items
+  placeItemInRoom() {
+    // Generate random x location, but don't allow that x coordinate
+    // to be in any of the columns where there is a vertical wall
+    var xLoc = Math.floor(Math.random() * (85 - 0 + 1)) + 0;
+    if (xLoc === 20 || xLoc === 42 || xLoc === 64) {
+      xLoc -= 1;
+    } else if (xLoc === 21 || xLoc === 43 || xLoc === 65) {
+      xLoc += 1;
+    }
+    // Generate random y location, but don't allow that y coordinate
+    // to be in any of the rows where there is a horizontal wall
+    var yLoc = Math.floor(Math.random() * (63 - 0 + 1)) + 0;
+    if (yLoc === 20 || yLoc === 42) {
+      yLoc -= 1;
+    } else if (yLoc === 21 || yLoc === 43) {
+      yLoc += 1;
+    }
+    // Don't let enemies be placed where hero starts
+    // ***** This will have to be expanded to not allow items to be placed on top of other items *****
+    if (xLoc === 5 && yLoc === 5) {
+      xLoc += 1;
+    }
+    return [xLoc, yLoc];
+  }
+
+
+
+
+
+// Combine this into a function named drawPlayer()
+// this.ctx.fillStyle = "green";
+// this.ctx.fillRect(this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);)
+
 }
-
-
 
