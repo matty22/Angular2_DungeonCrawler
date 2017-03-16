@@ -6,6 +6,18 @@
 }
 
 #canvasContainer {
+  position: relative;
   display: flex;
   justify-content: center;
+}
+
+#dungeonMap {
+  z-index: 0;
+  position: absolute;
+}
+
+#shadowOverlay {
+  background-color: transparent;
+  z-index: 1;
+  position: absolute;
 }

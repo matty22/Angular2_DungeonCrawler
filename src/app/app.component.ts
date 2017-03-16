@@ -11,10 +11,13 @@ export class AppComponent implements OnInit {
 
   canvas: any;
   ctx: any;
+  canvasOverlay: any;
+  overlayCtx: any;
   canvasWidth: number;
   canvasHeight: number;
   playerLocation: number[];
-  dungeonFloor: number = 2;
+  dungeonFloor: number = 0;
+  gameMessage: string = "";
   doorLocations: Array<Array<number>> = [[75, 42], [75, 43], [76, 42], [76, 43], [64, 53], [64, 54], [65, 53], [65, 54]];
   wallTiles: Array<Array<number>> = [];
   enemyTiles: Array<Array<number>> = [];
@@ -30,9 +33,9 @@ export class AppComponent implements OnInit {
         }
   enemies: Enemy[] = [
       { health: 10, minAttack: 4, maxAttack: 6, location: [] },           // Level 1 enemy stats
-      { health: 50, minAttack: 8, maxAttack: 10, location: [] },          // Level 2 enemy stats
-      { health: 100, minAttack: 12, maxAttack: 14, location: [] },        // Level 3 enemy stats
-      { health: 200, minAttack: 16, maxAttack: 18, location: [] },        // Boss enemy stats
+      { health: 20, minAttack: 8, maxAttack: 10, location: [] },          // Level 2 enemy stats
+      { health: 50, minAttack: 12, maxAttack: 14, location: [] },        // Level 3 enemy stats
+      { health: 100, minAttack: 16, maxAttack: 18, location: [] },        // Boss enemy stats
       { health: 10, minAttack: 4, maxAttack: 6, location: [] },
       { health: 10, minAttack: 4, maxAttack: 6, location: [] },
       { health: 10, minAttack: 4, maxAttack: 6, location: [] },
@@ -49,6 +52,8 @@ export class AppComponent implements OnInit {
   ngOnInit() {
     this.canvas = <HTMLCanvasElement> document.getElementById('dungeonMap');
     this.ctx = this.canvas.getContext('2d');
+    this.canvasOverlay = <HTMLCanvasElement> document.getElementById('shadowOverlay');
+    this.overlayCtx = this.canvasOverlay.getContext('2d');
     this.canvasWidth = 860;
     this.canvasHeight = 640;
     this.buildBoard();
@@ -58,7 +63,6 @@ export class AppComponent implements OnInit {
     this.placePotions();
     this.placeWeapon();
     this.placeStairsOrBoss();
-    console.log(this.dungeonFloor);
   }
 
   // Build the game board
@@ -295,7 +299,7 @@ export class AppComponent implements OnInit {
             // If the player dies, end the game
             if (this.player.health <= 0) {
               // Add Game Over functionality here
-              console.log("Game Over!");
+              this.gameMessage = "You Lose";
             }
             // Player hits between a range of damage * player level
             // Enemy health pool based on which level of the dungeon the player is on
@@ -307,16 +311,50 @@ export class AppComponent implements OnInit {
             // If the enemy dies, move into his space and gain XP
             if (this.enemies[this.dungeonFloor].health <= 0) {
               this.player.xp += 10;
+              if (this.player.xp >= 100) {
+                this.player.level += 1;
+                this.player.xp = 0;
+              }
               this.paintFloorBehindPlayer();
               this.playerLocation[0] -= 1;
               this.paintPlayer();
+              // Reset enemy health so it is ready for the next enemy
+              switch(this.dungeonFloor) {
+                case 0: 
+                  this.enemies[this.dungeonFloor].health = 10;
+                  break;
+                case 1:
+                  this.enemies[this.dungeonFloor].health = 20;
+                  break;
+                case 2:
+                  this.enemies[this.dungeonFloor].health = 50;
+                  break;
+              }
             }
           }
           // If player collides with boss enemy
           else if (this.dungeonFloor == 2 && JSON.stringify(this.bossLocation).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
                 this.playerLocation[0] += 1;
                 this.paintPlayer();
-                console.log("hit boss");
+                var bossHit = Math.floor(Math.random() * (this.enemies[3].maxAttack - this.enemies[3].minAttack + 1)) + this.enemies[3].minAttack;
+                this.player.health = this.player.health - bossHit;
+                // If the player dies, end the game
+                if (this.player.health <= 0) {
+                  // Add Game Over functionality here
+                  this.gameMessage = "You Lose";
+                }
+                // Player hits between a range of damage * player level
+                // Enemy health pool based on which level of the dungeon the player is on
+                // Floor 0: 10
+                // Floor 1: 50
+                // Floor 2: 100
+                // Boss: 200
+                var playerHit = Math.floor(Math.random() * (this.player.maxAttack * this.player.level - this.player.minAttack * this.player.level + 1)) + this.player.minAttack * this.player.level;
+                this.enemies[3].health = this.enemies[3].health - playerHit;
+                // If the enemy dies, move into his space and gain XP
+                if (this.enemies[3].health <= 0) {
+                  this.gameMessage = "You Win!";
+                }
            }
           // If the space the player is moving into is not a wall or an enemy, move player into that new space 
           else {
@@ -345,6 +383,11 @@ export class AppComponent implements OnInit {
                   this.player.weapon = 'Excalibur';
                   this.player.minAttack = 9;
                   this.player.maxAttack = 12;
+                  break;
+                case 'Excalibur':
+                  this.player.weapon = 'Ragnarok';
+                  this.player.minAttack = 12;
+                  this.player.maxAttack = 15;
                   break;
               }
             }
@@ -380,7 +423,7 @@ export class AppComponent implements OnInit {
             // If the player dies, end the game
             if (this.player.health <= 0) {
               // Add Game Over functionality here
-              console.log("Game Over!");
+              this.gameMessage = "You Lose";
             }
             // Player hits between a range of damage * player level
             // Enemy health pool based on which level of the dungeon the player is on
@@ -392,16 +435,50 @@ export class AppComponent implements OnInit {
             // If the enemy dies, move into his space and gain XP
             if (this.enemies[this.dungeonFloor].health <= 0) {
               this.player.xp += 10;
+              if (this.player.xp >= 100) {
+                this.player.level += 1;
+                this.player.xp = 0;
+              }
               this.paintFloorBehindPlayer();
               this.playerLocation[1] -= 1;
               this.paintPlayer();
+              // Reset enemy health so it is ready for the next enemy
+              switch(this.dungeonFloor) {
+                case 0: 
+                  this.enemies[this.dungeonFloor].health = 10;
+                  break;
+                case 1:
+                  this.enemies[this.dungeonFloor].health = 20;
+                  break;
+                case 2:
+                  this.enemies[this.dungeonFloor].health = 50;
+                  break;
+              }
             }
           }
           // If player collides with boss enemy
           else if (this.dungeonFloor == 2 && JSON.stringify(this.bossLocation).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
                 this.playerLocation[1] += 1;
                 this.paintPlayer();
-                console.log("hit boss");
+                var bossHit = Math.floor(Math.random() * (this.enemies[3].maxAttack - this.enemies[3].minAttack + 1)) + this.enemies[3].minAttack;
+                this.player.health = this.player.health - bossHit;
+                // If the player dies, end the game
+                if (this.player.health <= 0) {
+                  // Add Game Over functionality here
+                  this.gameMessage = "You Lose";
+                }
+                // Player hits between a range of damage * player level
+                // Enemy health pool based on which level of the dungeon the player is on
+                // Floor 0: 10
+                // Floor 1: 50
+                // Floor 2: 100
+                // Boss: 200
+                var playerHit = Math.floor(Math.random() * (this.player.maxAttack * this.player.level - this.player.minAttack * this.player.level + 1)) + this.player.minAttack * this.player.level;
+                this.enemies[3].health = this.enemies[3].health - playerHit;
+                // If the enemy dies, move into his space and gain XP
+                if (this.enemies[3].health <= 0) {
+                  this.gameMessage = "You Win!";
+                }
            }
           // If the space the player is moving into is not a wall or an enemy, move player into that new space 
           else {
@@ -434,6 +511,11 @@ export class AppComponent implements OnInit {
                   this.player.weapon = 'Excalibur';
                   this.player.minAttack = this.player.level * 9;
                   this.player.maxAttack = this.player.level * 12;
+                  break;
+                case 'Excalibur':
+                  this.player.weapon = 'Ragnarok';
+                  this.player.minAttack = 12;
+                  this.player.maxAttack = 15;
                   break;
               }
             }
@@ -469,7 +551,7 @@ export class AppComponent implements OnInit {
             // If the player dies, end the game
             if (this.player.health <= 0) {
               // Add Game Over functionality here
-              console.log("Game Over!");
+              this.gameMessage = "You Lose";
             }
             // Player hits between a range of damage * player level
             // Enemy health pool based on which level of the dungeon the player is on
@@ -481,16 +563,50 @@ export class AppComponent implements OnInit {
             // If the enemy dies, move into his space and gain XP
             if (this.enemies[this.dungeonFloor].health <= 0) {
               this.player.xp += 10;
+              if (this.player.xp >= 100) {
+                this.player.level += 1;
+                this.player.xp = 0;
+              }
               this.paintFloorBehindPlayer();
               this.playerLocation[0] += 1;
               this.paintPlayer();
+              // Reset enemy health so it is ready for the next enemy
+              switch(this.dungeonFloor) {
+                case 0: 
+                  this.enemies[this.dungeonFloor].health = 10;
+                  break;
+                case 1:
+                  this.enemies[this.dungeonFloor].health = 20;
+                  break;
+                case 2:
+                  this.enemies[this.dungeonFloor].health = 50;
+                  break;
+              }
             }
           }
           // If player collides with boss enemy
           else if (this.dungeonFloor == 2 && JSON.stringify(this.bossLocation).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
                 this.playerLocation[0] -= 1;
                 this.paintPlayer();
-                console.log("hit boss");
+                var bossHit = Math.floor(Math.random() * (this.enemies[3].maxAttack - this.enemies[3].minAttack + 1)) + this.enemies[3].minAttack;
+                this.player.health = this.player.health - bossHit;
+                // If the player dies, end the game
+                if (this.player.health <= 0) {
+                  // Add Game Over functionality here
+                  this.gameMessage = "You Lose";
+                }
+                // Player hits between a range of damage * player level
+                // Enemy health pool based on which level of the dungeon the player is on
+                // Floor 0: 10
+                // Floor 1: 50
+                // Floor 2: 100
+                // Boss: 200
+                var playerHit = Math.floor(Math.random() * (this.player.maxAttack * this.player.level - this.player.minAttack * this.player.level + 1)) + this.player.minAttack * this.player.level;
+                this.enemies[3].health = this.enemies[3].health - playerHit;
+                // If the enemy dies, move into his space and gain XP
+                if (this.enemies[3].health <= 0) {
+                  this.gameMessage = "You Win!";
+                }
            }
           // If the space the player is moving into is not a wall or an enemy, move player into that new space 
           else {
@@ -519,6 +635,11 @@ export class AppComponent implements OnInit {
                   this.player.weapon = 'Excalibur';
                   this.player.minAttack = this.player.level * 9;
                   this.player.maxAttack = this.player.level * 12;
+                  break;
+                case 'Excalibur':
+                  this.player.weapon = 'Ragnarok';
+                  this.player.minAttack = 12;
+                  this.player.maxAttack = 15;
                   break;
               }
             }
@@ -553,7 +674,7 @@ export class AppComponent implements OnInit {
             // If the player dies, end the game
             if (this.player.health <= 0) {
               // Add Game Over functionality here
-              console.log("Game Over!");
+              this.gameMessage = "You Lose";
             }
             // Player hits between a range of damage * player level
             // Enemy health pool based on which level of the dungeon the player is on
@@ -565,16 +686,51 @@ export class AppComponent implements OnInit {
             // If the enemy dies, move into his space and gain XP
             if (this.enemies[this.dungeonFloor].health <= 0) {
               this.player.xp += 10;
+              if (this.player.xp >= 100) {
+                this.player.level += 1;
+                this.player.xp = 0;
+              }
               this.paintFloorBehindPlayer();
               this.playerLocation[1] += 1;
               this.paintPlayer();
+              // Reset enemy health so it is ready for the next enemy
+              switch(this.dungeonFloor) {
+                case 0: 
+                  this.enemies[this.dungeonFloor].health = 10;
+                  break;
+                case 1:
+                  this.enemies[this.dungeonFloor].health = 20;
+                  break;
+                case 2:
+                  this.enemies[this.dungeonFloor].health = 50;
+                  break;
+              }
+              
             }
           }
           // If player collides with boss enemy
           else if (this.dungeonFloor == 2 && JSON.stringify(this.bossLocation).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
                 this.playerLocation[1] -= 1;
                 this.paintPlayer();
-                console.log("hit boss");
+                var bossHit = Math.floor(Math.random() * (this.enemies[3].maxAttack - this.enemies[3].minAttack + 1)) + this.enemies[3].minAttack;
+                this.player.health = this.player.health - bossHit;
+                // If the player dies, end the game
+                if (this.player.health <= 0) {
+                  // Add Game Over functionality here
+                  this.gameMessage = "You Lose";
+                }
+                // Player hits between a range of damage * player level
+                // Enemy health pool based on which level of the dungeon the player is on
+                // Floor 0: 10
+                // Floor 1: 50
+                // Floor 2: 100
+                // Boss: 200
+                var playerHit = Math.floor(Math.random() * (this.player.maxAttack * this.player.level - this.player.minAttack * this.player.level + 1)) + this.player.minAttack * this.player.level;
+                this.enemies[3].health = this.enemies[3].health - playerHit;
+                // If the enemy dies, move into his space and gain XP
+                if (this.enemies[3].health <= 0) {
+                  this.gameMessage = "You Win!";
+                }
            }
           // If the space the player is moving into is not a wall or an enemy, move player into that new space 
           else {
@@ -605,6 +761,11 @@ export class AppComponent implements OnInit {
                   this.player.minAttack = this.player.level * 9;
                   this.player.maxAttack = this.player.level * 12;
                   break;
+                case 'Excalibur':
+                  this.player.weapon = 'Ragnarok';
+                  this.player.minAttack = 12;
+                  this.player.maxAttack = 15;
+                  break;
               }
             }
             this.determineCurrentRoom();
@@ -614,47 +775,135 @@ export class AppComponent implements OnInit {
   }
 
   determineCurrentRoom() {
+    // Top row of rooms
     if (this.playerLocation[0] < 21 && this.playerLocation[1] < 21) {
       this.player.currentRoom = 1;
+      this.overlayCtx.clearRect(0, 0, 860, 640);
+      this.overlayCtx.fillStyle = "black";
+      // Shadow room 2, 3, 4
+      this.overlayCtx.fillRect(21 * 10, 0 * 10, 650, 210)
+      // Shadow second and third rows
+      this.overlayCtx.fillRect(0, 21 * 10, 860, 430);
+      
     }
     else if (this.playerLocation[0] >= 21 && this.playerLocation[0] < 43 && this.playerLocation[1] < 21) {
       this.player.currentRoom = 2;
+      this.overlayCtx.clearRect(0, 0, 860, 640);
+      this.overlayCtx.fillStyle = "black";
+      // Shadow room 1
+      this.overlayCtx.fillRect(0, 0, 210, 220);
+      // Shadow room 3, 4
+      this.overlayCtx.fillRect(43 * 10, 0, 480, 220);
+      // Shadow second and third rows
+      this.overlayCtx.fillRect(0, 21 * 10, 860, 430);
     }
     else if (this.playerLocation[0] >= 43 && this.playerLocation[0] < 65 && this.playerLocation[1] < 21) {
       this.player.currentRoom = 3;
+      this.overlayCtx.clearRect(0, 0, 860, 640);
+      this.overlayCtx.fillStyle = "black";
+      // Shadow room 1 and 2
+      this.overlayCtx.fillRect(0, 0, 430, 230);
+      // Shadow room 4
+      this.overlayCtx.fillRect(65 * 10, 0, 220, 210);
+      // Shadow second and third rows
+      this.overlayCtx.fillRect(0, 21 * 10, 860, 430);
     }
     else if (this.playerLocation[0] >= 65 && this.playerLocation[1] < 21) {
       this.player.currentRoom = 4;
+      this.overlayCtx.clearRect(0, 0, 860, 640);
+      this.overlayCtx.fillStyle = "black";
+      //Shadow room 1, 2, 3
+      this.overlayCtx.fillRect(0, 0, 650, 210);
+      // Shadow second and third rows
+      this.overlayCtx.fillRect(0, 21 * 10, 860, 430);
     }
+    // Second row of rooms
     else if (this.playerLocation[0] < 21 && this.playerLocation[1] >= 21 && this.playerLocation[1] < 43) {
       this.player.currentRoom = 5;
+      this.overlayCtx.clearRect(0, 0, 860, 640);
+      this.overlayCtx.fillStyle = "black";
+      // Shadow rooms 6, 7, 8
+      this.overlayCtx.fillRect(21 * 10, 21 * 10, 650, 220);
+      // Shadow first and third rows
+      this.overlayCtx.fillRect(0, 0, 860, 210);
+      this.overlayCtx.fillRect(0, 43 * 10, 860, 210);
     }
     else if (this.playerLocation[0] >= 21 && this.playerLocation[0] < 43 && this.playerLocation[1] >= 21 && this.playerLocation[1] < 43) {
       this.player.currentRoom = 6;
+      this.overlayCtx.clearRect(0, 0, 860, 640);
+      this.overlayCtx.fillStyle = "black";
+      // Shadow room 5, 7, and 8
+      this.overlayCtx.fillRect(0, 21 * 10, 210, 220);
+      this.overlayCtx.fillRect(43 * 10, 21 * 10, 430, 220);
+      // Shadow first and third rows
+      this.overlayCtx.fillRect(0, 0, 860, 210);
+      this.overlayCtx.fillRect(0, 43 * 10, 860, 210);
     }
     else if (this.playerLocation[0] >= 43 && this.playerLocation[0] < 65 && this.playerLocation[1] >= 21 && this.playerLocation[1] < 43) {
       this.player.currentRoom = 7;
+      this.overlayCtx.clearRect(0, 0, 860, 640);
+      this.overlayCtx.fillStyle = "black";
+      //Shadow room 5, 6, and 8
+      this.overlayCtx.fillRect(0, 21 * 10, 430, 220);
+      this.overlayCtx.fillRect(65 * 10, 21 * 10, 210, 220);
+      // Shadow first and third rows
+      this.overlayCtx.fillRect(0, 0, 860, 210);
+      this.overlayCtx.fillRect(0, 43 * 10, 860, 210);
     }
     else if (this.playerLocation[0] >= 65 && this.playerLocation[1] >= 21 && this.playerLocation[1] < 43) {
       this.player.currentRoom = 8;
+      this.overlayCtx.clearRect(0, 0, 860, 640);
+      this.overlayCtx.fillStyle = "black";
+      // Shadow rooms 5, 6, and 7
+      this.overlayCtx.fillRect(0, 21 * 10, 650, 220);
+      // Shadow first and third rows
+      this.overlayCtx.fillRect(0, 0, 860, 210);
+      this.overlayCtx.fillRect(0, 43 * 10, 860, 210);
     }
+    // Third row of rooms
     else if (this.playerLocation[0] < 21 && this.playerLocation[1] >= 43 && this.playerLocation[1] < 64) {
       this.player.currentRoom = 9;
+      this.overlayCtx.clearRect(0, 0, 860, 640);
+      this.overlayCtx.fillStyle = "black";
+      // Shadow rooms 10, 11, and 12
+      this.overlayCtx.fillRect(21 * 10, 43 * 10, 650, 220);
+      // Shadow first and second rows
+      this.overlayCtx.fillRect(0, 0, 860, 430);
     }
     else if (this.playerLocation[0] >= 21 && this.playerLocation[0] < 43 && this.playerLocation[1] >= 43 && this.playerLocation[1] < 64) {
       this.player.currentRoom = 10;
+      this.overlayCtx.clearRect(0, 0, 860, 640);
+      this.overlayCtx.fillStyle = "black";
+      // Shadow rooms 9, 11, and 12
+      this.overlayCtx.fillRect(0, 43 * 10, 210, 210);
+      this.overlayCtx.fillRect(43 * 10, 43 * 10, 430, 210);
+      // Shadow first and second rows
+      this.overlayCtx.fillRect(0, 0, 860, 430);
     }
     else if (this.playerLocation[0] >= 43 && this.playerLocation[0] < 65 && this.playerLocation[1] >= 43 && this.playerLocation[1] < 64) {
       this.player.currentRoom = 11;
+      this.overlayCtx.clearRect(0, 0, 860, 640);
+      this.overlayCtx.fillStyle = "black";
+      // Shadow rooms 9, 10, and 12
+      this.overlayCtx.fillRect(0, 43 * 10, 430, 210);
+      this.overlayCtx.fillRect(65 * 10, 43 * 10, 210, 210)
+      // Shadow first and second rows
+      this.overlayCtx.fillRect(0, 0, 860, 430);
     }
     else if (this.playerLocation[0] >= 65 && this.playerLocation[1] > 42 && this.playerLocation[1] < 64) {
-      this.player.currentRoom = 12;
+      this.player.currentRoom = 12;this.overlayCtx.clearRect(0, 0, 860, 640);
+      this.overlayCtx.fillStyle = "black";
+      // Shadow rooms 9, 10, and 11
+      this.overlayCtx.fillRect(0, 43 * 10, 650, 210);
+      // Shadow first and second rows
+      this.overlayCtx.fillRect(0, 0, 860, 430);
     }
   }
 
   // Function that runs when player moves to another floor
   changeFloor() {
     this.player.hasKey = false;
+    this.player.currentRoom = 1;
     this.dungeonFloor += 1;
     this.paintFloorBehindPlayer();
     this.placePlayer();
@@ -728,23 +977,23 @@ export class AppComponent implements OnInit {
 
 /***** TODO *****/
 
-  // - Add level up function when player reaches 100XP
-  // - Add game over functionality
   // - Add shadow functionality
-  
-  // - Add boss damage and player damage to boss
-
-  // - Add a legend
   // - Skin dungeon with patterns rather than flat colors
+  // - Add a legend
   // - Add instructions area
   // - Add story area with music
   // - Key still sometimes gets generated in locked room
-
+  // - Hidden enemies are being generated, but not colored -- When an enemy is defeated splice it out of the enemyTiles array
+  
 /****************/
+
 
 /***** Optional TODO *****/
 
   // - When player unlocks a door cell, remove all door cells and paint floor gray
+  // - Further tuning of the damage model
+  // - Improve game win functionality
+  // - Improve game loss functionality
 
 /*************************/
 
