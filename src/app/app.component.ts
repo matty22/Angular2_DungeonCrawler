@@ -14,6 +14,8 @@ export class AppComponent implements OnInit {
   canvasWidth: number;
   canvasHeight: number;
   playerLocation: number[];
+  dungeonFloor: number = 2;
+  doorLocations: Array<Array<number>> = [[75, 42], [75, 43], [76, 42], [76, 43], [64, 53], [64, 54], [65, 53], [65, 54]];
   wallTiles: Array<Array<number>> = [];
   enemyTiles: Array<Array<number>> = [];
   player:Player = {
@@ -26,11 +28,11 @@ export class AppComponent implements OnInit {
           currentRoom: 1,
           hasKey: false
         }
-  enemiesLvl1: Enemy[] = [
-      { health: 10, minAttack: 4, maxAttack: 6, location: [] },
-      { health: 10, minAttack: 4, maxAttack: 6, location: [] },
-      { health: 10, minAttack: 4, maxAttack: 6, location: [] },
-      { health: 10, minAttack: 4, maxAttack: 6, location: [] },
+  enemies: Enemy[] = [
+      { health: 10, minAttack: 4, maxAttack: 6, location: [] },           // Level 1 enemy stats
+      { health: 50, minAttack: 8, maxAttack: 10, location: [] },          // Level 2 enemy stats
+      { health: 100, minAttack: 12, maxAttack: 14, location: [] },        // Level 3 enemy stats
+      { health: 200, minAttack: 16, maxAttack: 18, location: [] },        // Boss enemy stats
       { health: 10, minAttack: 4, maxAttack: 6, location: [] },
       { health: 10, minAttack: 4, maxAttack: 6, location: [] },
       { health: 10, minAttack: 4, maxAttack: 6, location: [] },
@@ -40,6 +42,8 @@ export class AppComponent implements OnInit {
     ];
   keyTile: number[];
   weaponTile: number[];
+  stairBossTile:number [];
+  bossLocation: Array<Array<number>>;
   potionTiles: Array<Array<number>> = [];
 
   ngOnInit() {
@@ -53,6 +57,8 @@ export class AppComponent implements OnInit {
     this.placeKey();
     this.placePotions();
     this.placeWeapon();
+    this.placeStairsOrBoss();
+    console.log(this.dungeonFloor);
   }
 
   // Build the game board
@@ -65,6 +71,7 @@ export class AppComponent implements OnInit {
     }
     this.buildVerticalWalls();
     this.buildHorizontalWalls();
+    this.buildDoors();
   }
 
   // Builds Vertical Walls
@@ -197,20 +204,26 @@ export class AppComponent implements OnInit {
     }
   }
 
+  buildDoors() {
+    for (let i = 0; i < this.doorLocations.length; i++) {
+      this.ctx.fillStyle = "#8b4513";
+      this.ctx.fillRect(this.doorLocations[i][0] * 10, this.doorLocations[i][1] * 10, 10, 10);
+    }
+  }
+
   // Assign player location upon page load
   placePlayer() {
     this.playerLocation = [5, 5];
-    this.ctx.fillStyle = "green";
-    this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+    this.paintPlayer();
   }
 
   placeEnemies() {
     // Generate 10 enemies and randomly place them on the canvas
-    for(let i = 0; i < this.enemiesLvl1.length; i++) {
-      this.enemiesLvl1[i].location = this.placeItemInRoom();
-      this.enemyTiles.push(this.enemiesLvl1[i].location);
+    for(let i = 0; i < this.enemies.length; i++) {
+      this.enemies[i].location = this.placeItemInRoom();
+      this.enemyTiles.push(this.enemies[i].location);
       this.ctx.fillStyle = "purple";
-      this.ctx.fillRect(this.enemiesLvl1[i].location[0] * 10, this.enemiesLvl1[i].location[1] * 10, 10, 10);
+      this.ctx.fillRect(this.enemies[i].location[0] * 10, this.enemies[i].location[1] * 10, 10, 10);
     }
   }
 
@@ -218,8 +231,11 @@ export class AppComponent implements OnInit {
   // Keys could be in an imp's pocket or hidden under other items, seach carefully!
   placeKey() {
     this.keyTile = this.placeItemInRoom();
-    this.ctx.fillStyle = "yellow";
-    this.ctx.fillRect(this.keyTile[0] * 10, this.keyTile[1] * 10, 10, 10);
+    // If the key generates inside the locked room, move it into the room on the left
+    if (this.keyTile[0] > 66 && this.keyTile[1] > 40) {
+      this.keyTile = [50, 60];
+    }
+    this.paintKey();
   }
 
   // Place three health potions somewhere in the dungeon
@@ -234,8 +250,18 @@ export class AppComponent implements OnInit {
   // Place upgrade weapon somewhere in the dungeon
   placeWeapon() {
     this.weaponTile = this.placeItemInRoom();
-    this.ctx.fillStyle = "silver";
-    this.ctx.fillRect(this.weaponTile[0] * 10, this.weaponTile[1] * 10, 10, 10);
+    this.paintWeapon();
+  }
+
+  // Places stairwell if on floor 0 or 1, places dungeon boss if on floor 2
+  placeStairsOrBoss() {
+    this.stairBossTile = [76, 56];
+    if (this.dungeonFloor == 0 || this.dungeonFloor == 1) {
+      this.paintStairs();
+    } else {
+      this.bossLocation = [[76, 56], [77, 56], [76, 57], [77, 57]];
+      this.paintBoss();
+    }
   }
 
   // Move player upon key press
@@ -244,22 +270,27 @@ export class AppComponent implements OnInit {
         // Player pushes left arrow key
         case 37:
           // Fill in the space player is leaving with gray background color
-          this.ctx.fillStyle = "gray";
-          this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+          this.paintFloorBehindPlayer();
           this.playerLocation[0] -= 1;
           // If the space the player is moving into is a wall, move player back to left 1 space
           if (JSON.stringify(this.wallTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1 || this.playerLocation[0] == -1) {
             this.playerLocation[0] += 1;
-            this.ctx.fillStyle = "green";
-            this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+            this.paintPlayer();
+          }
+          // If the player hits a door and does not have the key, player cannot pass
+          else if (JSON.stringify(this.doorLocations).indexOf(JSON.stringify(this.playerLocation)) !== -1 && this.player.hasKey == false) {
+            this.playerLocation[0] += 1;
+            this.paintPlayer();
           }
           // If player collides with enemy
           else if (JSON.stringify(this.enemyTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
             this.playerLocation[0] += 1;
-            this.ctx.fillStyle = "green";
-            this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
-            // Enemy hits between 4-6 damage. Need to add level multiplier to this
-            var enemyHit = Math.floor(Math.random() * (this.enemiesLvl1[0].maxAttack - this.enemiesLvl1[0].minAttack + 1)) + this.enemiesLvl1[0].minAttack;
+            this.paintPlayer();
+            // Enemies do damage based on which level of the dungeon the player is on
+            // Floor 0: 4-6 damage
+            // Floor 1: 8-10 damage
+            // Floor 2: 12-14 damage
+            var enemyHit = Math.floor(Math.random() * (this.enemies[this.dungeonFloor].maxAttack - this.enemies[this.dungeonFloor].minAttack + 1)) + this.enemies[this.dungeonFloor].minAttack;
             this.player.health = this.player.health - enemyHit;
             // If the player dies, end the game
             if (this.player.health <= 0) {
@@ -267,31 +298,43 @@ export class AppComponent implements OnInit {
               console.log("Game Over!");
             }
             // Player hits between a range of damage * player level
+            // Enemy health pool based on which level of the dungeon the player is on
+            // Floor 0: 10
+            // Floor 1: 50
+            // Floor 2: 100
             var playerHit = Math.floor(Math.random() * (this.player.maxAttack * this.player.level - this.player.minAttack * this.player.level + 1)) + this.player.minAttack * this.player.level;
-            this.enemiesLvl1[0].health = this.enemiesLvl1[0].health - playerHit;
+            this.enemies[this.dungeonFloor].health = this.enemies[this.dungeonFloor].health - playerHit;
             // If the enemy dies, move into his space and gain XP
-            if (this.enemiesLvl1[0].health <= 0) {
+            if (this.enemies[this.dungeonFloor].health <= 0) {
               this.player.xp += 10;
-              this.ctx.fillStyle = "gray";
-              this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+              this.paintFloorBehindPlayer();
               this.playerLocation[0] -= 1;
-              this.ctx.fillStyle = "green";
-              this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+              this.paintPlayer();
             }
           }
+          // If player collides with boss enemy
+          else if (this.dungeonFloor == 2 && JSON.stringify(this.bossLocation).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
+                this.playerLocation[0] += 1;
+                this.paintPlayer();
+                console.log("hit boss");
+           }
           // If the space the player is moving into is not a wall or an enemy, move player into that new space 
           else {
-            this.ctx.fillStyle = "green";
-            this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+            this.paintPlayer();
             // If player steps on key, add to player inventory
             if (JSON.stringify(this.keyTile) == JSON.stringify(this.playerLocation)) {
               this.player.hasKey = true;
             }
+            // If player steps on stairs
+            if (this.playerLocation[0] == this.stairBossTile[0] && this.playerLocation[1] == this.stairBossTile[1]) {
+              this.changeFloor();
+            }
             // If player steps on potion, increase player health by 25
-            else if (JSON.stringify(this.potionTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
+            if (JSON.stringify(this.potionTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
               this.player.health += 25;
             }
-            else if (JSON.stringify(this.weaponTile) == JSON.stringify(this.playerLocation)) {
+            // If player steps on weapon, upgrade weapon
+            if (JSON.stringify(this.weaponTile) == JSON.stringify(this.playerLocation)) {
               switch(this.player.weapon) {
                 case 'Iron Sword':
                   this.player.weapon = 'Mithril Sword';
@@ -312,22 +355,27 @@ export class AppComponent implements OnInit {
         // Player pushes up arrow key
         case 38:
           // Fill in the space player is leaving with gray background color
-          this.ctx.fillStyle = "gray";
-          this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+          this.paintFloorBehindPlayer();
           this.playerLocation[1] -= 1;
           // If the space the player is moving into is a wall, move player back to left 1 space
           if (JSON.stringify(this.wallTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1 || this.playerLocation[1] == -1) {
             this.playerLocation[1] += 1;
-            this.ctx.fillStyle = "green";
-            this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+            this.paintPlayer();
+          }
+          // If the player hits a door and does not have the key, player cannot pass
+          else if (JSON.stringify(this.doorLocations).indexOf(JSON.stringify(this.playerLocation)) !== -1 && this.player.hasKey == false) {
+            this.playerLocation[1] += 1;
+            this.paintPlayer();
           }
           // If player collides with enemy
           else if (JSON.stringify(this.enemyTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
             this.playerLocation[1] += 1;
-            this.ctx.fillStyle = "green";
-            this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
-            // Enemy hits between 4-6 damage. Need to add level multiplier to this
-            var enemyHit = Math.floor(Math.random() * (this.enemiesLvl1[0].maxAttack - this.enemiesLvl1[0].minAttack + 1)) + this.enemiesLvl1[0].minAttack;
+            this.paintPlayer();
+            // Enemies do damage based on which level of the dungeon the player is on
+            // Floor 0: 4-6 damage
+            // Floor 1: 8-10 damage
+            // Floor 2: 12-14 damage
+            var enemyHit = Math.floor(Math.random() * (this.enemies[this.dungeonFloor].maxAttack - this.enemies[this.dungeonFloor].minAttack + 1)) + this.enemies[this.dungeonFloor].minAttack;
             this.player.health = this.player.health - enemyHit;
             // If the player dies, end the game
             if (this.player.health <= 0) {
@@ -335,31 +383,47 @@ export class AppComponent implements OnInit {
               console.log("Game Over!");
             }
             // Player hits between a range of damage * player level
+            // Enemy health pool based on which level of the dungeon the player is on
+            // Floor 0: 10
+            // Floor 1: 50
+            // Floor 2: 100
             var playerHit = Math.floor(Math.random() * (this.player.maxAttack * this.player.level - this.player.minAttack * this.player.level + 1)) + this.player.minAttack * this.player.level;
-            this.enemiesLvl1[0].health = this.enemiesLvl1[0].health - playerHit;
+            this.enemies[this.dungeonFloor].health = this.enemies[this.dungeonFloor].health - playerHit;
             // If the enemy dies, move into his space and gain XP
-            if (this.enemiesLvl1[0].health <= 0) {
+            if (this.enemies[this.dungeonFloor].health <= 0) {
               this.player.xp += 10;
-              this.ctx.fillStyle = "gray";
-              this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+              this.paintFloorBehindPlayer();
               this.playerLocation[1] -= 1;
-              this.ctx.fillStyle = "green";
-              this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+              this.paintPlayer();
             }
           }
+          // If player collides with boss enemy
+          else if (this.dungeonFloor == 2 && JSON.stringify(this.bossLocation).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
+                this.playerLocation[1] += 1;
+                this.paintPlayer();
+                console.log("hit boss");
+           }
           // If the space the player is moving into is not a wall or an enemy, move player into that new space 
           else {
-            this.ctx.fillStyle = "green";
-            this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+            this.paintPlayer();
             // If player steps on key, add to player inventory
             if (JSON.stringify(this.keyTile) == JSON.stringify(this.playerLocation)) {
               this.player.hasKey = true;
             }
+            // If player steps on stairs
+            if (this.playerLocation[0] == this.stairBossTile[0] && this.playerLocation[1] == this.stairBossTile[1]) {
+              this.changeFloor();
+            }
+            // If player steps on stairs
+            if (this.playerLocation[0] == this.stairBossTile[0] && this.playerLocation[1] == this.stairBossTile[1]) {
+              this.changeFloor();
+            }
             // If player steps on potion, increase player health by 25
-            else if (JSON.stringify(this.potionTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
+            if (JSON.stringify(this.potionTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
               this.player.health += 25;
             }
-            else if (JSON.stringify(this.weaponTile) == JSON.stringify(this.playerLocation)) {
+            // If player steps on weapon, upgrade weapon
+            if (JSON.stringify(this.weaponTile) == JSON.stringify(this.playerLocation)) {
               switch(this.player.weapon) {
                 case 'Iron Sword':
                   this.player.weapon = 'Mithril Sword';
@@ -380,22 +444,27 @@ export class AppComponent implements OnInit {
         // Player pushes right arrow key
         case 39:
           // Fill in the space player is leaving with gray background color
-          this.ctx.fillStyle = "gray";
-          this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+          this.paintFloorBehindPlayer();
           this.playerLocation[0] += 1;
           // If the space the player is moving into is a wall, move player back to left 1 space
           if (JSON.stringify(this.wallTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1 || this.playerLocation[0] == 86) {
             this.playerLocation[0] -= 1;
-            this.ctx.fillStyle = "green";
-            this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+            this.paintPlayer();
+          }
+           // If the player hits a door and does not have the key, player cannot pass
+          else if (JSON.stringify(this.doorLocations).indexOf(JSON.stringify(this.playerLocation)) !== -1 && this.player.hasKey == false) {
+            this.playerLocation[0] -= 1;
+            this.paintPlayer();
           }
           // If player collides with enemy
           else if (JSON.stringify(this.enemyTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
             this.playerLocation[0] -= 1;
-            this.ctx.fillStyle = "green";
-            this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
-            // Enemy hits between 4-6 damage. Need to add level multiplier to this
-            var enemyHit = Math.floor(Math.random() * (this.enemiesLvl1[0].maxAttack - this.enemiesLvl1[0].minAttack + 1)) + this.enemiesLvl1[0].minAttack;
+            this.paintPlayer();
+            // Enemies do damage based on which level of the dungeon the player is on
+            // Floor 0: 4-6 damage
+            // Floor 1: 8-10 damage
+            // Floor 2: 12-14 damage
+            var enemyHit = Math.floor(Math.random() * (this.enemies[this.dungeonFloor].maxAttack - this.enemies[this.dungeonFloor].minAttack + 1)) + this.enemies[this.dungeonFloor].minAttack;
             this.player.health = this.player.health - enemyHit;
             // If the player dies, end the game
             if (this.player.health <= 0) {
@@ -403,31 +472,43 @@ export class AppComponent implements OnInit {
               console.log("Game Over!");
             }
             // Player hits between a range of damage * player level
+            // Enemy health pool based on which level of the dungeon the player is on
+            // Floor 0: 10
+            // Floor 1: 50
+            // Floor 2: 100
             var playerHit = Math.floor(Math.random() * (this.player.maxAttack * this.player.level - this.player.minAttack * this.player.level + 1)) + this.player.minAttack * this.player.level;
-            this.enemiesLvl1[0].health = this.enemiesLvl1[0].health - playerHit;
+            this.enemies[this.dungeonFloor].health = this.enemies[this.dungeonFloor].health - playerHit;
             // If the enemy dies, move into his space and gain XP
-            if (this.enemiesLvl1[0].health <= 0) {
+            if (this.enemies[this.dungeonFloor].health <= 0) {
               this.player.xp += 10;
-              this.ctx.fillStyle = "gray";
-              this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+              this.paintFloorBehindPlayer();
               this.playerLocation[0] += 1;
-              this.ctx.fillStyle = "green";
-              this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+              this.paintPlayer();
             }
           }
+          // If player collides with boss enemy
+          else if (this.dungeonFloor == 2 && JSON.stringify(this.bossLocation).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
+                this.playerLocation[0] -= 1;
+                this.paintPlayer();
+                console.log("hit boss");
+           }
           // If the space the player is moving into is not a wall or an enemy, move player into that new space 
           else {
-            this.ctx.fillStyle = "green";
-            this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+            this.paintPlayer();
             // If player steps on key, add to player inventory
             if (JSON.stringify(this.keyTile) == JSON.stringify(this.playerLocation)) {
               this.player.hasKey = true;
             }
+            // If player steps on stairs
+            if (this.playerLocation[0] == this.stairBossTile[0] && this.playerLocation[1] == this.stairBossTile[1]) {
+              this.changeFloor();
+            }
             // If player steps on potion, increase player health by 25
-            else if (JSON.stringify(this.potionTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
+            if (JSON.stringify(this.potionTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
               this.player.health += 25;
             }
-            else if (JSON.stringify(this.weaponTile) == JSON.stringify(this.playerLocation)) {
+            // If player steps on weapon, upgrade weapon
+            if (JSON.stringify(this.weaponTile) == JSON.stringify(this.playerLocation)) {
               switch(this.player.weapon) {
                 case 'Iron Sword':
                   this.player.weapon = 'Mithril Sword';
@@ -447,22 +528,27 @@ export class AppComponent implements OnInit {
         
         // Player pushes down arrow key
         case 40:
-          this.ctx.fillStyle = "gray";
-          this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+          this.paintFloorBehindPlayer();
           this.playerLocation[1] += 1;
           // If the space the player is moving into is a wall, move player back to left 1 space
           if (JSON.stringify(this.wallTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1 || this.playerLocation[1] == 64) {
             this.playerLocation[1] -= 1;
-            this.ctx.fillStyle = "green";
-            this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+            this.paintPlayer();
+          }
+          // If the player hits a door and does not have the key, player cannot pass
+          else if (JSON.stringify(this.doorLocations).indexOf(JSON.stringify(this.playerLocation)) !== -1 && this.player.hasKey == false) {
+            this.playerLocation[1] -= 1;
+            this.paintPlayer();
           }
           // If player collides with enemy
           else if (JSON.stringify(this.enemyTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
             this.playerLocation[1] -= 1;
-            this.ctx.fillStyle = "green";
-            this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
-            // Enemy hits between 4-6 damage. Need to add level multiplier to this
-            var enemyHit = Math.floor(Math.random() * (this.enemiesLvl1[0].maxAttack - this.enemiesLvl1[0].minAttack + 1)) + this.enemiesLvl1[0].minAttack;
+            this.paintPlayer();
+            // Enemies do damage based on which level of the dungeon the player is on
+            // Floor 0: 4-6 damage
+            // Floor 1: 8-10 damage
+            // Floor 2: 12-14 damage
+            var enemyHit = Math.floor(Math.random() * (this.enemies[this.dungeonFloor].maxAttack - this.enemies[this.dungeonFloor].minAttack + 1)) + this.enemies[this.dungeonFloor].minAttack;
             this.player.health = this.player.health - enemyHit;
             // If the player dies, end the game
             if (this.player.health <= 0) {
@@ -470,31 +556,44 @@ export class AppComponent implements OnInit {
               console.log("Game Over!");
             }
             // Player hits between a range of damage * player level
+            // Enemy health pool based on which level of the dungeon the player is on
+            // Floor 0: 10
+            // Floor 1: 50
+            // Floor 2: 100
             var playerHit = Math.floor(Math.random() * (this.player.maxAttack * this.player.level - this.player.minAttack * this.player.level + 1)) + this.player.minAttack * this.player.level;
-            this.enemiesLvl1[0].health = this.enemiesLvl1[0].health - playerHit;
+            this.enemies[this.dungeonFloor].health = this.enemies[this.dungeonFloor].health - playerHit;
             // If the enemy dies, move into his space and gain XP
-            if (this.enemiesLvl1[0].health <= 0) {
+            if (this.enemies[this.dungeonFloor].health <= 0) {
               this.player.xp += 10;
-              this.ctx.fillStyle = "gray";
-              this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+              this.paintFloorBehindPlayer();
               this.playerLocation[1] += 1;
-              this.ctx.fillStyle = "green";
-              this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+              this.paintPlayer();
             }
           }
+          // If player collides with boss enemy
+          else if (this.dungeonFloor == 2 && JSON.stringify(this.bossLocation).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
+                this.playerLocation[1] -= 1;
+                this.paintPlayer();
+                console.log("hit boss");
+           }
           // If the space the player is moving into is not a wall or an enemy, move player into that new space 
           else {
-            this.ctx.fillStyle = "green";
-            this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+            this.paintPlayer();
             // If player steps on key, add to player inventory
             if (JSON.stringify(this.keyTile) == JSON.stringify(this.playerLocation)) {
               this.player.hasKey = true;
             }
+            // If player steps on stairs
+            if (this.dungeonFloor < 2 && this.playerLocation[0] == this.stairBossTile[0] && this.playerLocation[1] == this.stairBossTile[1]) {
+              this.changeFloor();
+               // If player contacts boss enemy
+            }
             // If player steps on potion, increase player health by 25
-            else if (JSON.stringify(this.potionTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
+            if (JSON.stringify(this.potionTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
               this.player.health += 25;
             }
-            else if (JSON.stringify(this.weaponTile) == JSON.stringify(this.playerLocation)) {
+            // If player steps on weapon, upgrade weapon
+            if (JSON.stringify(this.weaponTile) == JSON.stringify(this.playerLocation)) {
               switch(this.player.weapon) {
                 case 'Iron Sword':
                   this.player.weapon = 'Mithril Sword';
@@ -553,6 +652,20 @@ export class AppComponent implements OnInit {
     }
   }
 
+  // Function that runs when player moves to another floor
+  changeFloor() {
+    this.player.hasKey = false;
+    this.dungeonFloor += 1;
+    this.paintFloorBehindPlayer();
+    this.placePlayer();
+    this.placeEnemies();
+    this.placeKey();
+    this.placeWeapon();
+    this.placePotions();
+    this.buildDoors();
+    this.placeStairsOrBoss();
+  }
+
   // Function to generate random locations for enemies and items
   placeItemInRoom() {
     // Generate random x location, but don't allow that x coordinate
@@ -580,31 +693,62 @@ export class AppComponent implements OnInit {
   }
 
 
+/***** Cell painting functions *****/
+  paintPlayer() {
+    this.ctx.fillStyle = "green";
+    this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+  }
 
+  paintFloorBehindPlayer() {
+    this.ctx.fillStyle = "gray";
+    this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+  }
 
+  paintKey() {
+    this.ctx.fillStyle = "yellow";
+    this.ctx.fillRect(this.keyTile[0] * 10, this.keyTile[1] * 10, 10, 10);
+  }
 
-// Combine this into a function named drawPlayer()
-// this.ctx.fillStyle = "green";
-// this.ctx.fillRect(this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);)
+  paintWeapon() {
+    this.ctx.fillStyle = "silver";
+    this.ctx.fillRect(this.weaponTile[0] * 10, this.weaponTile[1] * 10, 10, 10);
+  }
+
+  paintStairs() {
+    this.ctx.fillStyle = "brown";
+    this.ctx.fillRect(this.stairBossTile[0] * 10, this.stairBossTile[1] * 10, 10, 10);
+  }
+
+  paintBoss() {
+    this.ctx.fillStyle = "pink";
+    this.ctx.fillRect(this.stairBossTile[0] * 10, this.stairBossTile[1] * 10, 20, 20);
+  }
+/***** End cell painting functions *****/
 
 
 /***** TODO *****/
 
   // - Add level up function when player reaches 100XP
-  // - Add level multiplier for enemy damage to Player
   // - Add game over functionality
-  // - Add final boss
-  // - Add doors to stairwell
-  // - Add door unlocking with key functionality
-  // - Add stairwell
-  // - Add functionality to regenerate map upon reaching another floor
   // - Add shadow functionality
+  
+  // - Add boss damage and player damage to boss
+
   // - Add a legend
   // - Skin dungeon with patterns rather than flat colors
   // - Add instructions area
   // - Add story area with music
-  
+  // - Key still sometimes gets generated in locked room
+
 /****************/
+
+/***** Optional TODO *****/
+
+  // - When player unlocks a door cell, remove all door cells and paint floor gray
+
+/*************************/
+
+
 
 }
 
