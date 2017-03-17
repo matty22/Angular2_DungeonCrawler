@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core'; 
 import { Player } from './player';
 import { Enemy } from'./enemy';
 
@@ -32,9 +32,9 @@ export class AppComponent implements OnInit {
           hasKey: false
         }
   enemies: Enemy[] = [
-      { health: 10, minAttack: 4, maxAttack: 6, location: [] },           // Level 1 enemy stats
-      { health: 20, minAttack: 8, maxAttack: 10, location: [] },          // Level 2 enemy stats
-      { health: 50, minAttack: 12, maxAttack: 14, location: [] },        // Level 3 enemy stats
+      { health: 10, minAttack: 3, maxAttack: 4, location: [] },           // Level 1 enemy stats
+      { health: 20, minAttack: 5, maxAttack: 6, location: [] },           // Level 2 enemy stats
+      { health: 50, minAttack: 10, maxAttack: 12, location: [] },         // Level 3 enemy stats
       { health: 100, minAttack: 16, maxAttack: 18, location: [] },        // Boss enemy stats
       { health: 10, minAttack: 4, maxAttack: 6, location: [] },
       { health: 10, minAttack: 4, maxAttack: 6, location: [] },
@@ -44,10 +44,20 @@ export class AppComponent implements OnInit {
       { health: 10, minAttack: 4, maxAttack: 6, location: [] },
     ];
   keyTile: number[];
+  numberOfKeys: number = 0;
   weaponTile: number[];
   stairBossTile:number [];
   bossLocation: Array<Array<number>>;
   potionTiles: Array<Array<number>> = [];
+  wallImg:string = '../assets/BlackBrickSmall.png';
+  lenkImg:string = '../assets/Lenk.png';
+  impImg:string = '../assets/Imp.png';
+  swordImg:string = '../assets/Sword.png';
+  potionImg:string = '../assets/Potion.png';
+  keyImg:string = '../assets/Key.png';
+  doorImg:string = '../assets/Door.png';
+  stairsImg:string = '../assets/Stairs.png';
+  goonanImg:string = '../assets/Goonan.png';
 
   ngOnInit() {
     this.canvas = <HTMLCanvasElement> document.getElementById('dungeonMap');
@@ -57,6 +67,19 @@ export class AppComponent implements OnInit {
     this.canvasWidth = 860;
     this.canvasHeight = 640;
     this.buildBoard();
+  }
+
+  // Build the game board
+  buildBoard() {
+    for (var j = 0; j < this.canvasHeight; j++) {
+      for (var i = 0; i < this.canvasWidth; i++) {
+        this.ctx.fillStyle = "#555555";
+        this.ctx.fillRect(i * 10, j * 10, 10, 10);
+      }
+    }
+    this.buildVerticalWalls();
+    this.buildHorizontalWalls();
+    this.buildDoors();
     this.placePlayer();
     this.placeEnemies();
     this.placeKey();
@@ -65,82 +88,118 @@ export class AppComponent implements OnInit {
     this.placeStairsOrBoss();
   }
 
-  // Build the game board
-  buildBoard() {
-    for (var j = 0; j < this.canvasHeight; j++) {
-      for (var i = 0; i < this.canvasWidth; i++) {
-        this.ctx.fillStyle = "gray";
-        this.ctx.fillRect(i * 10, j * 10, 10, 10);
-      }
-    }
-    this.buildVerticalWalls();
-    this.buildHorizontalWalls();
-    this.buildDoors();
-  }
-
   // Builds Vertical Walls
+  // This could be refactored into a single loop, with conditionals inside to determine if a wall should be built or not
   buildVerticalWalls() {
     for(let i = 0; i < 9; i++) {
-      this.ctx.fillStyle = "black";
-      this.ctx.fillRect(20 * 10, i * 10, 10, 10);
+      let imgSrc1 = new Image();
+      imgSrc1.onload = () => { this.ctx.drawImage(imgSrc1, 20 * 10, i * 10, 10, 10)}
+      imgSrc1.src = this.wallImg;
+      let imgSrc2 = new Image();
+      imgSrc2.onload = () => { this.ctx.drawImage(imgSrc2, 21 * 10, i * 10, 10, 10)}
+      imgSrc2.src = this.wallImg;
+      let imgSrc3 = new Image();
+      imgSrc3.onload = () => { this.ctx.drawImage(imgSrc3, 42 * 10, i * 10, 10, 10)}
+      imgSrc3.src = this.wallImg;
+      let imgSrc4 = new Image();
+      imgSrc4.onload = () => { this.ctx.drawImage(imgSrc4, 43 * 10, i * 10, 10, 10)}
+      imgSrc4.src = this.wallImg;
+      let imgSrc5 = new Image();
+      imgSrc5.onload = () => { this.ctx.drawImage(imgSrc5, 64 * 10, i * 10, 10, 10)}
+      imgSrc5.src = this.wallImg;
+       let imgSrc6 = new Image();
+      imgSrc6.onload = () => { this.ctx.drawImage(imgSrc6, 65 * 10, i * 10, 10, 10)}
+      imgSrc6.src = this.wallImg;
+
       this.wallTiles.push([20, i]);
-      this.ctx.fillRect(21 * 10, i * 10, 10, 10);
       this.wallTiles.push([21, i]);
-      this.ctx.fillRect(42 * 10, i * 10, 10, 10);
       this.wallTiles.push([42, i]);
-      this.ctx.fillRect(43 * 10, i * 10, 10, 10);
       this.wallTiles.push([43, i]);
-      this.ctx.fillRect(64 * 10, i * 10, 10, 10);
       this.wallTiles.push([64, i]);
-      this.ctx.fillRect(65 * 10, i * 10, 10, 10);
       this.wallTiles.push([65, i]);
     }
 
     for (let i = 11; i < 31; i++) {
-      this.ctx.fillStyle = "black";
-      this.ctx.fillRect(20 * 10, i * 10, 10, 10);
+      let imgSrc1 = new Image();
+      imgSrc1.onload = () => { this.ctx.drawImage(imgSrc1, 20 * 10, i * 10, 10, 10)}
+      imgSrc1.src = this.wallImg;
+      let imgSrc2 = new Image();
+      imgSrc2.onload = () => { this.ctx.drawImage(imgSrc2, 21 * 10, i * 10, 10, 10)}
+      imgSrc2.src = this.wallImg;
+      let imgSrc3 = new Image();
+      imgSrc3.onload = () => { this.ctx.drawImage(imgSrc3, 42 * 10, i * 10, 10, 10)}
+      imgSrc3.src = this.wallImg;
+      let imgSrc4 = new Image();
+      imgSrc4.onload = () => { this.ctx.drawImage(imgSrc4, 43 * 10, i * 10, 10, 10)}
+      imgSrc4.src = this.wallImg;
+      let imgSrc5 = new Image();
+      imgSrc5.onload = () => { this.ctx.drawImage(imgSrc5, 64 * 10, i * 10, 10, 10)}
+      imgSrc5.src = this.wallImg;
+       let imgSrc6 = new Image();
+      imgSrc6.onload = () => { this.ctx.drawImage(imgSrc6, 65 * 10, i * 10, 10, 10)}
+      imgSrc6.src = this.wallImg;
+
       this.wallTiles.push([20, i]);
-      this.ctx.fillRect(21 * 10, i * 10, 10, 10);
       this.wallTiles.push([21, i]);
-      this.ctx.fillRect(42 * 10, i * 10, 10, 10);
       this.wallTiles.push([42, i]);
-      this.ctx.fillRect(43 * 10, i * 10, 10, 10);
       this.wallTiles.push([43, i]);
-      this.ctx.fillRect(64 * 10, i * 10, 10, 10);
       this.wallTiles.push([64, i]);
-      this.ctx.fillRect(65 * 10, i * 10, 10, 10);
       this.wallTiles.push([65, i]);
     }
     
     for (let i = 33; i < 53; i++) {
-      this.ctx.fillStyle = "black";
-      this.ctx.fillRect(20 * 10, i * 10, 10, 10);
+      let imgSrc1 = new Image();
+      imgSrc1.onload = () => { this.ctx.drawImage(imgSrc1, 20 * 10, i * 10, 10, 10)}
+      imgSrc1.src = this.wallImg;
+      let imgSrc2 = new Image();
+      imgSrc2.onload = () => { this.ctx.drawImage(imgSrc2, 21 * 10, i * 10, 10, 10)}
+      imgSrc2.src = this.wallImg;
+      let imgSrc3 = new Image();
+      imgSrc3.onload = () => { this.ctx.drawImage(imgSrc3, 42 * 10, i * 10, 10, 10)}
+      imgSrc3.src = this.wallImg;
+      let imgSrc4 = new Image();
+      imgSrc4.onload = () => { this.ctx.drawImage(imgSrc4, 43 * 10, i * 10, 10, 10)}
+      imgSrc4.src = this.wallImg;
+      let imgSrc5 = new Image();
+      imgSrc5.onload = () => { this.ctx.drawImage(imgSrc5, 64 * 10, i * 10, 10, 10)}
+      imgSrc5.src = this.wallImg;
+       let imgSrc6 = new Image();
+      imgSrc6.onload = () => { this.ctx.drawImage(imgSrc6, 65 * 10, i * 10, 10, 10)}
+      imgSrc6.src = this.wallImg;
+
       this.wallTiles.push([20, i]);
-      this.ctx.fillRect(21 * 10, i * 10, 10, 10);
       this.wallTiles.push([21, i]);
-      this.ctx.fillRect(42 * 10, i * 10, 10, 10);
       this.wallTiles.push([42, i]);
-      this.ctx.fillRect(43 * 10, i * 10, 10, 10);
       this.wallTiles.push([43, i]);
-      this.ctx.fillRect(64 * 10, i * 10, 10, 10);
       this.wallTiles.push([64, i]);
-      this.ctx.fillRect(65 * 10, i * 10, 10, 10);
       this.wallTiles.push([65, i]);
     }
 
     for (let i = 55; i < 64; i++) {
-      this.ctx.fillStyle = "black";
-      this.ctx.fillRect(20 * 10, i * 10, 10, 10);
+      let imgSrc1 = new Image();
+      imgSrc1.onload = () => { this.ctx.drawImage(imgSrc1, 20 * 10, i * 10, 10, 10)}
+      imgSrc1.src = this.wallImg;
+      let imgSrc2 = new Image();
+      imgSrc2.onload = () => { this.ctx.drawImage(imgSrc2, 21 * 10, i * 10, 10, 10)}
+      imgSrc2.src = this.wallImg;
+      let imgSrc3 = new Image();
+      imgSrc3.onload = () => { this.ctx.drawImage(imgSrc3, 42 * 10, i * 10, 10, 10)}
+      imgSrc3.src = this.wallImg;
+      let imgSrc4 = new Image();
+      imgSrc4.onload = () => { this.ctx.drawImage(imgSrc4, 43 * 10, i * 10, 10, 10)}
+      imgSrc4.src = this.wallImg;
+      let imgSrc5 = new Image();
+      imgSrc5.onload = () => { this.ctx.drawImage(imgSrc5, 64 * 10, i * 10, 10, 10)}
+      imgSrc5.src = this.wallImg;
+       let imgSrc6 = new Image();
+      imgSrc6.onload = () => { this.ctx.drawImage(imgSrc6, 65 * 10, i * 10, 10, 10)}
+      imgSrc6.src = this.wallImg;
+
       this.wallTiles.push([20, i]);
-      this.ctx.fillRect(21 * 10, i * 10, 10, 10);
       this.wallTiles.push([21, i]);
-      this.ctx.fillRect(42 * 10, i * 10, 10, 10);
       this.wallTiles.push([42, i]);
-      this.ctx.fillRect(43 * 10, i * 10, 10, 10);
       this.wallTiles.push([43, i]);
-      this.ctx.fillRect(64 * 10, i * 10, 10, 10);
       this.wallTiles.push([64, i]);
-      this.ctx.fillRect(65 * 10, i * 10, 10, 10);
       this.wallTiles.push([65, i]);
     }
   }
@@ -148,70 +207,111 @@ export class AppComponent implements OnInit {
   // Builds horizontal Walls
   buildHorizontalWalls() {
     for(let i = 0; i < 9; i++) {
-      this.ctx.fillStyle = "black";
-      this.ctx.fillRect(i * 10, 20 * 10, 10, 10);
+      let imgSrc1 = new Image();
+      imgSrc1.onload = () => { this.ctx.drawImage(imgSrc1, i * 10, 20 * 10, 10, 10) };
+      imgSrc1.src = this.wallImg;
+      let imgSrc2 = new Image();
+      imgSrc2.onload = () => { this.ctx.drawImage(imgSrc2, i * 10, 21 * 10, 10, 10) };
+      imgSrc2.src = this.wallImg;
+      let imgSrc3 = new Image();
+      imgSrc3.onload = () => { this.ctx.drawImage(imgSrc3, i * 10, 42 * 10, 10, 10) };
+      imgSrc3.src = this.wallImg;
+      let imgSrc4 = new Image();
+      imgSrc4.onload = () => { this.ctx.drawImage(imgSrc4, i * 10, 43 * 10, 10, 10) };
+      imgSrc4.src = this.wallImg;
+
       this.wallTiles.push([i, 20]);
-      this.ctx.fillRect(i * 10, 21 * 10, 10, 10);
       this.wallTiles.push([i, 21]);
-      this.ctx.fillRect(i * 10, 42 * 10, 10, 10);
       this.wallTiles.push([i, 42]);
-      this.ctx.fillRect(i * 10, 43 * 10, 10, 10);
       this.wallTiles.push([i, 43]);
     }
 
     for(let i = 11; i < 31; i++) {
-      this.ctx.fillStyle = "black";
-      this.ctx.fillRect(i * 10, 20 * 10, 10, 10);
+      let imgSrc1 = new Image();
+      imgSrc1.onload = () => { this.ctx.drawImage(imgSrc1, i * 10, 20 * 10, 10, 10) };
+      imgSrc1.src = this.wallImg;
+      let imgSrc2 = new Image();
+      imgSrc2.onload = () => { this.ctx.drawImage(imgSrc2, i * 10, 21 * 10, 10, 10) };
+      imgSrc2.src = this.wallImg;
+      let imgSrc3 = new Image();
+      imgSrc3.onload = () => { this.ctx.drawImage(imgSrc3, i * 10, 42 * 10, 10, 10) };
+      imgSrc3.src = this.wallImg;
+      let imgSrc4 = new Image();
+      imgSrc4.onload = () => { this.ctx.drawImage(imgSrc4, i * 10, 43 * 10, 10, 10) };
+      imgSrc4.src = this.wallImg;
+
       this.wallTiles.push([i, 20]);
-      this.ctx.fillRect(i * 10, 21 * 10, 10, 10);
       this.wallTiles.push([i, 21]);
-      this.ctx.fillRect(i * 10, 42 * 10, 10, 10);
       this.wallTiles.push([i, 42]);
-      this.ctx.fillRect(i * 10, 43 * 10, 10, 10);
       this.wallTiles.push([i, 43]);
     }
 
     for(let i = 33; i < 53; i++) {
-      this.ctx.fillStyle = "black";
-      this.ctx.fillRect(i * 10, 20 * 10, 10, 10);
+      let imgSrc1 = new Image();
+      imgSrc1.onload = () => { this.ctx.drawImage(imgSrc1, i * 10, 20 * 10, 10, 10) };
+      imgSrc1.src = this.wallImg;
+      let imgSrc2 = new Image();
+      imgSrc2.onload = () => { this.ctx.drawImage(imgSrc2, i * 10, 21 * 10, 10, 10) };
+      imgSrc2.src = this.wallImg;
+      let imgSrc3 = new Image();
+      imgSrc3.onload = () => { this.ctx.drawImage(imgSrc3, i * 10, 42 * 10, 10, 10) };
+      imgSrc3.src = this.wallImg;
+      let imgSrc4 = new Image();
+      imgSrc4.onload = () => { this.ctx.drawImage(imgSrc4, i * 10, 43 * 10, 10, 10) };
+      imgSrc4.src = this.wallImg;
+
       this.wallTiles.push([i, 20]);
-      this.ctx.fillRect(i * 10, 21 * 10, 10, 10);
       this.wallTiles.push([i, 21]);
-      this.ctx.fillRect(i * 10, 42 * 10, 10, 10);
       this.wallTiles.push([i, 42]);
-      this.ctx.fillRect(i * 10, 43 * 10, 10, 10);
       this.wallTiles.push([i, 43]);
     }
 
     for(let i = 55; i < 75; i++) {
-      this.ctx.fillStyle = "black";
-      this.ctx.fillRect(i * 10, 20 * 10, 10, 10);
+      let imgSrc1 = new Image();
+      imgSrc1.onload = () => { this.ctx.drawImage(imgSrc1, i * 10, 20 * 10, 10, 10) };
+      imgSrc1.src = this.wallImg;
+      let imgSrc2 = new Image();
+      imgSrc2.onload = () => { this.ctx.drawImage(imgSrc2, i * 10, 21 * 10, 10, 10) };
+      imgSrc2.src = this.wallImg;
+      let imgSrc3 = new Image();
+      imgSrc3.onload = () => { this.ctx.drawImage(imgSrc3, i * 10, 42 * 10, 10, 10) };
+      imgSrc3.src = this.wallImg;
+      let imgSrc4 = new Image();
+      imgSrc4.onload = () => { this.ctx.drawImage(imgSrc4, i * 10, 43 * 10, 10, 10) };
+      imgSrc4.src = this.wallImg;
+
       this.wallTiles.push([i, 20]);
-      this.ctx.fillRect(i * 10, 21 * 10, 10, 10);
       this.wallTiles.push([i, 21]);
-      this.ctx.fillRect(i * 10, 42 * 10, 10, 10);
       this.wallTiles.push([i, 42]);
-      this.ctx.fillRect(i * 10, 43 * 10, 10, 10);
       this.wallTiles.push([i, 43]);
     }
 
     for(let i = 77; i < 86; i++) {
-      this.ctx.fillStyle = "black";
-      this.ctx.fillRect(i * 10, 20 * 10, 10, 10);
+      let imgSrc1 = new Image();
+      imgSrc1.onload = () => { this.ctx.drawImage(imgSrc1, i * 10, 20 * 10, 10, 10) };
+      imgSrc1.src = this.wallImg;
+      let imgSrc2 = new Image();
+      imgSrc2.onload = () => { this.ctx.drawImage(imgSrc2, i * 10, 21 * 10, 10, 10) };
+      imgSrc2.src = this.wallImg;
+      let imgSrc3 = new Image();
+      imgSrc3.onload = () => { this.ctx.drawImage(imgSrc3, i * 10, 42 * 10, 10, 10) };
+      imgSrc3.src = this.wallImg;
+      let imgSrc4 = new Image();
+      imgSrc4.onload = () => { this.ctx.drawImage(imgSrc4, i * 10, 43 * 10, 10, 10) };
+      imgSrc4.src = this.wallImg;
+
       this.wallTiles.push([i, 20]);
-      this.ctx.fillRect(i * 10, 21 * 10, 10, 10);
       this.wallTiles.push([i, 21]);
-      this.ctx.fillRect(i * 10, 42 * 10, 10, 10);
       this.wallTiles.push([i, 42]);
-      this.ctx.fillRect(i * 10, 43 * 10, 10, 10);
       this.wallTiles.push([i, 43]);
     }
   }
 
   buildDoors() {
     for (let i = 0; i < this.doorLocations.length; i++) {
-      this.ctx.fillStyle = "#8b4513";
-      this.ctx.fillRect(this.doorLocations[i][0] * 10, this.doorLocations[i][1] * 10, 10, 10);
+      let doorSrc = new Image();
+      doorSrc.onload = () => { this.ctx.drawImage(doorSrc, this.doorLocations[i][0] * 10, this.doorLocations[i][1] * 10) };
+      doorSrc.src = this.doorImg;
     }
   }
 
@@ -219,6 +319,7 @@ export class AppComponent implements OnInit {
   placePlayer() {
     this.playerLocation = [5, 5];
     this.paintPlayer();
+    this.determineCurrentRoom();
   }
 
   placeEnemies() {
@@ -226,8 +327,9 @@ export class AppComponent implements OnInit {
     for(let i = 0; i < this.enemies.length; i++) {
       this.enemies[i].location = this.placeItemInRoom();
       this.enemyTiles.push(this.enemies[i].location);
-      this.ctx.fillStyle = "purple";
-      this.ctx.fillRect(this.enemies[i].location[0] * 10, this.enemies[i].location[1] * 10, 10, 10);
+      let impSrc = new Image();
+      impSrc.onload = () => { this.ctx.drawImage(impSrc, this.enemies[i].location[0] * 10, this.enemies[i].location[1] * 10 ) };
+      impSrc.src = this.impImg;
     }
   }
 
@@ -246,13 +348,15 @@ export class AppComponent implements OnInit {
   placePotions() {
     for (let i = 0; i < 3; i++) {
       this.potionTiles.push(this.placeItemInRoom());
-      this.ctx.fillStyle = "red";
-      this.ctx.fillRect(this.potionTiles[i][0] * 10, this.potionTiles[i][1] * 10, 10, 10);
+      let potionSrc = new Image();
+      potionSrc.onload = () => { this.ctx.drawImage(potionSrc, this.potionTiles[i][0] * 10, this.potionTiles[i][1] * 10 ) };
+      potionSrc.src = this.potionImg;
     } 
   }
 
   // Place upgrade weapon somewhere in the dungeon
   placeWeapon() {
+    this.weaponTile = [];
     this.weaponTile = this.placeItemInRoom();
     this.paintWeapon();
   }
@@ -362,6 +466,7 @@ export class AppComponent implements OnInit {
             // If player steps on key, add to player inventory
             if (JSON.stringify(this.keyTile) == JSON.stringify(this.playerLocation)) {
               this.player.hasKey = true;
+              this.numberOfKeys = 1;
             }
             // If player steps on stairs
             if (this.playerLocation[0] == this.stairBossTile[0] && this.playerLocation[1] == this.stairBossTile[1]) {
@@ -486,6 +591,7 @@ export class AppComponent implements OnInit {
             // If player steps on key, add to player inventory
             if (JSON.stringify(this.keyTile) == JSON.stringify(this.playerLocation)) {
               this.player.hasKey = true;
+              this.numberOfKeys = 1;
             }
             // If player steps on stairs
             if (this.playerLocation[0] == this.stairBossTile[0] && this.playerLocation[1] == this.stairBossTile[1]) {
@@ -614,6 +720,7 @@ export class AppComponent implements OnInit {
             // If player steps on key, add to player inventory
             if (JSON.stringify(this.keyTile) == JSON.stringify(this.playerLocation)) {
               this.player.hasKey = true;
+              this.numberOfKeys = 1;
             }
             // If player steps on stairs
             if (this.playerLocation[0] == this.stairBossTile[0] && this.playerLocation[1] == this.stairBossTile[1]) {
@@ -738,6 +845,7 @@ export class AppComponent implements OnInit {
             // If player steps on key, add to player inventory
             if (JSON.stringify(this.keyTile) == JSON.stringify(this.playerLocation)) {
               this.player.hasKey = true;
+              this.numberOfKeys = 1;
             }
             // If player steps on stairs
             if (this.dungeonFloor < 2 && this.playerLocation[0] == this.stairBossTile[0] && this.playerLocation[1] == this.stairBossTile[1]) {
@@ -774,6 +882,7 @@ export class AppComponent implements OnInit {
       }
   }
 
+  // Determines room player is currently in and shadows all other rooms
   determineCurrentRoom() {
     // Top row of rooms
     if (this.playerLocation[0] < 21 && this.playerLocation[1] < 21) {
@@ -903,8 +1012,29 @@ export class AppComponent implements OnInit {
   // Function that runs when player moves to another floor
   changeFloor() {
     this.player.hasKey = false;
+    this.numberOfKeys = 0;
     this.player.currentRoom = 1;
     this.dungeonFloor += 1;
+    // Paint over old key tile
+    this.ctx.fillStyle = "#555555";
+    this.ctx.fillRect(this.keyTile[0] * 10, this.keyTile[1] * 10, 10 , 10);
+    this.keyTile = [];
+    // Paint over old weapon tile
+    this.ctx.fillStyle = "#555555;"
+    this.ctx.fillRect(this.weaponTile[0] * 10, this.weaponTile[1] * 10, 10, 10);
+    this.weaponTile = [];
+    // Paint over old potion tiles
+    for (let i = 0; i < this.potionTiles.length; i++) {
+      this.ctx.fillStyle = "#555555";
+      this.ctx.fillRect(this.potionTiles[i][0] * 10, this.potionTiles[i][1] * 10, 10, 10);
+    }
+    this.potionTiles = [];
+    // Paint over old enemy tiles
+    for (let i = 0; i < this.enemies.length; i++) {
+      this.ctx.fillStyle = "#555555";
+      this.ctx.fillRect(this.enemies[i][0] * 10, this.enemies[i][1] * 10, 10, 10);
+    }
+    this.enemyTiles = [];
     this.paintFloorBehindPlayer();
     this.placePlayer();
     this.placeEnemies();
@@ -944,46 +1074,47 @@ export class AppComponent implements OnInit {
 
 /***** Cell painting functions *****/
   paintPlayer() {
-    this.ctx.fillStyle = "green";
-    this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
+    let playerSrc = new Image();
+    playerSrc.onload = () => { this.ctx.drawImage(playerSrc, this.playerLocation[0] * 10, this.playerLocation[1] * 10)};
+    playerSrc.src = this.lenkImg;
   }
 
   paintFloorBehindPlayer() {
-    this.ctx.fillStyle = "gray";
+    this.ctx.fillStyle = "#555555";
     this.ctx.fillRect(this.playerLocation[0] * 10, this.playerLocation[1] * 10, 10, 10);
   }
 
   paintKey() {
-    this.ctx.fillStyle = "yellow";
-    this.ctx.fillRect(this.keyTile[0] * 10, this.keyTile[1] * 10, 10, 10);
+    let keySrc = new Image();
+    keySrc.onload = () => { this.ctx.drawImage(keySrc, this.keyTile[0] * 10, this.keyTile[1] * 10)};
+    keySrc.src = this.keyImg;
   }
 
   paintWeapon() {
-    this.ctx.fillStyle = "silver";
-    this.ctx.fillRect(this.weaponTile[0] * 10, this.weaponTile[1] * 10, 10, 10);
+    let weaponSrc = new Image();
+    weaponSrc.onload = () => { this.ctx.drawImage(weaponSrc, this.weaponTile[0] * 10, this.weaponTile[1] * 10)};
+    weaponSrc.src = this.swordImg;
   }
 
   paintStairs() {
-    this.ctx.fillStyle = "brown";
-    this.ctx.fillRect(this.stairBossTile[0] * 10, this.stairBossTile[1] * 10, 10, 10);
+    let stairsSrc = new Image();
+    stairsSrc.onload = () => { this.ctx.drawImage(stairsSrc, this.stairBossTile[0] * 10, this.stairBossTile[1] * 10)};
+    stairsSrc.src = this.stairsImg;
   }
 
   paintBoss() {
-    this.ctx.fillStyle = "pink";
-    this.ctx.fillRect(this.stairBossTile[0] * 10, this.stairBossTile[1] * 10, 20, 20);
+    let bossSrc = new Image();
+    bossSrc.onload = () => { this.ctx.drawImage(bossSrc, this.stairBossTile[0] * 10, this.stairBossTile[1] * 10)};
+    bossSrc.src = this.goonanImg;
   }
 /***** End cell painting functions *****/
 
 
 /***** TODO *****/
 
-  // - Add shadow functionality
-  // - Skin dungeon with patterns rather than flat colors
-  // - Add a legend
   // - Add instructions area
   // - Add story area with music
   // - Key still sometimes gets generated in locked room
-  // - Hidden enemies are being generated, but not colored -- When an enemy is defeated splice it out of the enemyTiles array
   
 /****************/
 
@@ -994,6 +1125,8 @@ export class AppComponent implements OnInit {
   // - Further tuning of the damage model
   // - Improve game win functionality
   // - Improve game loss functionality
+  // - Refactor repetitive code
+  // - Zilda sprite for game win screen
 
 /*************************/
 
