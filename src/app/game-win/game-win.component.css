@@ -1,0 +1,17 @@
+
+#gameWinText {
+  font-family: 'Cinzel', serif;
+  font-size: 20px;
+  text-align: center;
+}
+
+#youWin {
+  font-family: 'Cinzel', serif;
+  font-size: 24px;
+  color: #204f15;
+  font-weight: bold;
+}
+
+#lenkAndZilda {
+  padding-top: 30px;
+}

@@ -1,9 +1,27 @@
-<div id="playerStats">Player HP: {{ player.health }}<br>
-                      Player XP: {{ player.xp }}<br>
-                      <img width="20" height="20" src='../assets/Sword.png'>: {{ player.weapon }}<br>
-                      <img width="20" height="20" src="../assets/Key.png">: {{ numberOfKeys }}
-  <div><button color="primary" md-raised-button (click)="openDialog()">Start Adventure</button></div>
-  <div><button color="accent" md-raised-button (click)="openInstructionsDialog()">Instructions</button></div>
+<div id="playerStats">
+  <div id="title">
+    <img width="20" height="20" src="../assets/finishedcresticon.png"> The Legend of Zilda</div>
+  <div class="statRow">
+    <img width="20" height="20" src='../assets/Heart.png'>: {{ player.health }}
+  </div>
+  <div class="statRow">
+    <img width="20" height="20" src='../assets/XP.png'>: {{ player.xp }}
+  </div> 
+  <div class="statRow">
+    <img width="20" height="20" src='../assets/Sword.png'>: {{ player.weapon }}
+  </div>                   
+  <div class="statRow">
+    <img width="20" height="20" src="../assets/Key.png">: {{ numberOfKeys }}
+  </div> 
+  <div class="statRow">
+    Player Level: {{ player.level }}
+  </div>                                     
+  <div>
+    <button id="startButton" color="accent" md-raised-button (click)="openDialog()">Start Adventure</button>
+  </div>
+  <div>
+    <button id="instructionsButton" color="primary" md-raised-button (click)="openInstructionsDialog()">Instructions</button>
+  </div>
 </div>
 <div id="canvasContainer" (window:keydown)="movePlayer($event)">
   <canvas id="shadowOverlay" width="860" height="640"></canvas>

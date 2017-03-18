@@ -3,6 +3,8 @@ import { MdDialog } from '@angular/material';
 
 import { StoryModalComponent } from './story-modal/story-modal.component';
 import { InstructionsModalComponent } from './instructions-modal/instructions-modal.component';
+import { GameOverComponent } from './game-over/game-over.component';
+import { GameWinComponent } from './game-win/game-win.component';
 import { Player } from './player';
 import { Enemy } from'./enemy';
 
@@ -14,16 +16,34 @@ import { Enemy } from'./enemy';
 export class AppComponent implements OnInit {
 
   constructor(public dialog: MdDialog,
-              public instructionsDialog: MdDialog) {}
+              public instructionsDialog: MdDialog,
+              public gameOverDialog: MdDialog,
+              public gameWinDialog: MdDialog) {}
 
-  openDialog() {
-    let dialogRef = this.dialog.open(StoryModalComponent);
-  }
+  /***** Modal Dialog Methods *****/
+    
+    openDialog() {
+      let dialogRef = this.dialog.open(StoryModalComponent);
+      var audio = new Audio('../assets/Intro.wav');
+      audio.play();
+      this.buildBoard();
+    }
 
-  openInstructionsDialog() {
-    let dialogRef = this.instructionsDialog.open(InstructionsModalComponent);
-  }
+    openInstructionsDialog() {
+      let dialogRef = this.instructionsDialog.open(InstructionsModalComponent);
+    }
 
+    openGameOverDialog() {
+      let dialogRef = this.gameOverDialog.open(GameOverComponent);
+    }
+
+    openGameWinDialog() {
+      let dialogRef = this.gameWinDialog.open(GameWinComponent);
+    }
+
+  /***** End modal Dialog Methods *****/
+
+  // Global variables
   canvas: any;
   ctx: any;
   canvasOverlay: any;
@@ -48,9 +68,9 @@ export class AppComponent implements OnInit {
         }
   enemies: Enemy[] = [
       { health: 10, minAttack: 3, maxAttack: 4, location: [] },           // Level 1 enemy stats
-      { health: 20, minAttack: 5, maxAttack: 6, location: [] },           // Level 2 enemy stats
+      { health: 30, minAttack: 5, maxAttack: 6, location: [] },           // Level 2 enemy stats
       { health: 50, minAttack: 10, maxAttack: 12, location: [] },         // Level 3 enemy stats
-      { health: 100, minAttack: 16, maxAttack: 18, location: [] },        // Boss enemy stats
+      { health: 200, minAttack: 18, maxAttack: 22, location: [] },        // Boss enemy stats
       { health: 10, minAttack: 4, maxAttack: 6, location: [] },
       { health: 10, minAttack: 4, maxAttack: 6, location: [] },
       { health: 10, minAttack: 4, maxAttack: 6, location: [] },
@@ -81,7 +101,6 @@ export class AppComponent implements OnInit {
     this.overlayCtx = this.canvasOverlay.getContext('2d');
     this.canvasWidth = 860;
     this.canvasHeight = 640;
-    this.buildBoard();
   }
 
   // Build the game board
@@ -220,6 +239,7 @@ export class AppComponent implements OnInit {
   }
 
   // Builds horizontal Walls
+  // This could also be refactored into a single loop
   buildHorizontalWalls() {
     for(let i = 0; i < 9; i++) {
       let imgSrc1 = new Image();
@@ -322,6 +342,7 @@ export class AppComponent implements OnInit {
     }
   }
 
+  // Build the door cells and paint them with door images
   buildDoors() {
     for (let i = 0; i < this.doorLocations.length; i++) {
       let doorSrc = new Image();
@@ -349,7 +370,6 @@ export class AppComponent implements OnInit {
   }
 
   // Place a key somewhere in the dungeon
-  // Keys could be in an imp's pocket or hidden under other items, seach carefully!
   placeKey() {
     this.keyTile = this.placeItemInRoom();
     // If the key generates inside the locked room, move it into the room on the left
@@ -369,7 +389,7 @@ export class AppComponent implements OnInit {
     } 
   }
 
-  // Place upgrade weapon somewhere in the dungeon
+  // Place weapon upgrade somewhere in the dungeon
   placeWeapon() {
     this.weaponTile = [];
     this.weaponTile = this.placeItemInRoom();
@@ -413,12 +433,12 @@ export class AppComponent implements OnInit {
             // Floor 0: 4-6 damage
             // Floor 1: 8-10 damage
             // Floor 2: 12-14 damage
+            this.impGrowlSound();
             var enemyHit = Math.floor(Math.random() * (this.enemies[this.dungeonFloor].maxAttack - this.enemies[this.dungeonFloor].minAttack + 1)) + this.enemies[this.dungeonFloor].minAttack;
             this.player.health = this.player.health - enemyHit;
             // If the player dies, end the game
             if (this.player.health <= 0) {
-              // Add Game Over functionality here
-              this.gameMessage = "You Lose";
+              this.youLose();
             }
             // Player hits between a range of damage * player level
             // Enemy health pool based on which level of the dungeon the player is on
@@ -443,7 +463,7 @@ export class AppComponent implements OnInit {
                   this.enemies[this.dungeonFloor].health = 10;
                   break;
                 case 1:
-                  this.enemies[this.dungeonFloor].health = 20;
+                  this.enemies[this.dungeonFloor].health = 30;
                   break;
                 case 2:
                   this.enemies[this.dungeonFloor].health = 50;
@@ -455,12 +475,12 @@ export class AppComponent implements OnInit {
           else if (this.dungeonFloor == 2 && JSON.stringify(this.bossLocation).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
                 this.playerLocation[0] += 1;
                 this.paintPlayer();
+                this.bossGrowlSound();
                 var bossHit = Math.floor(Math.random() * (this.enemies[3].maxAttack - this.enemies[3].minAttack + 1)) + this.enemies[3].minAttack;
                 this.player.health = this.player.health - bossHit;
                 // If the player dies, end the game
                 if (this.player.health <= 0) {
-                  // Add Game Over functionality here
-                  this.gameMessage = "You Lose";
+                  this.youLose();
                 }
                 // Player hits between a range of damage * player level
                 // Enemy health pool based on which level of the dungeon the player is on
@@ -470,9 +490,9 @@ export class AppComponent implements OnInit {
                 // Boss: 200
                 var playerHit = Math.floor(Math.random() * (this.player.maxAttack * this.player.level - this.player.minAttack * this.player.level + 1)) + this.player.minAttack * this.player.level;
                 this.enemies[3].health = this.enemies[3].health - playerHit;
-                // If the enemy dies, move into his space and gain XP
+                // If the boss dies, end the game victoriously
                 if (this.enemies[3].health <= 0) {
-                  this.gameMessage = "You Win!";
+                  this.youWin();
                 }
            }
           // If the space the player is moving into is not a wall or an enemy, move player into that new space 
@@ -480,19 +500,25 @@ export class AppComponent implements OnInit {
             this.paintPlayer();
             // If player steps on key, add to player inventory
             if (JSON.stringify(this.keyTile) == JSON.stringify(this.playerLocation)) {
+              this.keyTile = [];
               this.player.hasKey = true;
               this.numberOfKeys = 1;
+              this.pickUpItemSound();
             }
             // If player steps on stairs
             if (this.playerLocation[0] == this.stairBossTile[0] && this.playerLocation[1] == this.stairBossTile[1]) {
               this.changeFloor();
+              this.openDoorEnterStairSound();
             }
             // If player steps on potion, increase player health by 25
             if (JSON.stringify(this.potionTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
               this.player.health += 25;
+              this.pickUpItemSound();
             }
             // If player steps on weapon, upgrade weapon
             if (JSON.stringify(this.weaponTile) == JSON.stringify(this.playerLocation)) {
+              this.weaponTile = [];
+              this.pickUpItemSound();
               switch(this.player.weapon) {
                 case 'Iron Sword':
                   this.player.weapon = 'Mithril Sword';
@@ -538,12 +564,12 @@ export class AppComponent implements OnInit {
             // Floor 0: 4-6 damage
             // Floor 1: 8-10 damage
             // Floor 2: 12-14 damage
+            this.impGrowlSound();
             var enemyHit = Math.floor(Math.random() * (this.enemies[this.dungeonFloor].maxAttack - this.enemies[this.dungeonFloor].minAttack + 1)) + this.enemies[this.dungeonFloor].minAttack;
             this.player.health = this.player.health - enemyHit;
             // If the player dies, end the game
             if (this.player.health <= 0) {
-              // Add Game Over functionality here
-              this.gameMessage = "You Lose";
+              this.youLose();
             }
             // Player hits between a range of damage * player level
             // Enemy health pool based on which level of the dungeon the player is on
@@ -568,7 +594,7 @@ export class AppComponent implements OnInit {
                   this.enemies[this.dungeonFloor].health = 10;
                   break;
                 case 1:
-                  this.enemies[this.dungeonFloor].health = 20;
+                  this.enemies[this.dungeonFloor].health = 30;
                   break;
                 case 2:
                   this.enemies[this.dungeonFloor].health = 50;
@@ -580,12 +606,12 @@ export class AppComponent implements OnInit {
           else if (this.dungeonFloor == 2 && JSON.stringify(this.bossLocation).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
                 this.playerLocation[1] += 1;
                 this.paintPlayer();
+                this.bossGrowlSound();
                 var bossHit = Math.floor(Math.random() * (this.enemies[3].maxAttack - this.enemies[3].minAttack + 1)) + this.enemies[3].minAttack;
                 this.player.health = this.player.health - bossHit;
                 // If the player dies, end the game
                 if (this.player.health <= 0) {
-                  // Add Game Over functionality here
-                  this.gameMessage = "You Lose";
+                  this.youLose();
                 }
                 // Player hits between a range of damage * player level
                 // Enemy health pool based on which level of the dungeon the player is on
@@ -595,9 +621,9 @@ export class AppComponent implements OnInit {
                 // Boss: 200
                 var playerHit = Math.floor(Math.random() * (this.player.maxAttack * this.player.level - this.player.minAttack * this.player.level + 1)) + this.player.minAttack * this.player.level;
                 this.enemies[3].health = this.enemies[3].health - playerHit;
-                // If the enemy dies, move into his space and gain XP
+                // If the boss dies, end the game victoriously
                 if (this.enemies[3].health <= 0) {
-                  this.gameMessage = "You Win!";
+                  this.youWin();
                 }
            }
           // If the space the player is moving into is not a wall or an enemy, move player into that new space 
@@ -605,23 +631,25 @@ export class AppComponent implements OnInit {
             this.paintPlayer();
             // If player steps on key, add to player inventory
             if (JSON.stringify(this.keyTile) == JSON.stringify(this.playerLocation)) {
+              this.keyTile = [];
               this.player.hasKey = true;
               this.numberOfKeys = 1;
+              this.pickUpItemSound();
             }
             // If player steps on stairs
             if (this.playerLocation[0] == this.stairBossTile[0] && this.playerLocation[1] == this.stairBossTile[1]) {
               this.changeFloor();
-            }
-            // If player steps on stairs
-            if (this.playerLocation[0] == this.stairBossTile[0] && this.playerLocation[1] == this.stairBossTile[1]) {
-              this.changeFloor();
+              this.openDoorEnterStairSound();
             }
             // If player steps on potion, increase player health by 25
             if (JSON.stringify(this.potionTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
               this.player.health += 25;
+              this.pickUpItemSound();
             }
             // If player steps on weapon, upgrade weapon
             if (JSON.stringify(this.weaponTile) == JSON.stringify(this.playerLocation)) {
+              this.weaponTile = [];
+              this.pickUpItemSound();
               switch(this.player.weapon) {
                 case 'Iron Sword':
                   this.player.weapon = 'Mithril Sword';
@@ -667,12 +695,12 @@ export class AppComponent implements OnInit {
             // Floor 0: 4-6 damage
             // Floor 1: 8-10 damage
             // Floor 2: 12-14 damage
+            this.impGrowlSound();
             var enemyHit = Math.floor(Math.random() * (this.enemies[this.dungeonFloor].maxAttack - this.enemies[this.dungeonFloor].minAttack + 1)) + this.enemies[this.dungeonFloor].minAttack;
             this.player.health = this.player.health - enemyHit;
             // If the player dies, end the game
             if (this.player.health <= 0) {
-              // Add Game Over functionality here
-              this.gameMessage = "You Lose";
+              this.youLose();
             }
             // Player hits between a range of damage * player level
             // Enemy health pool based on which level of the dungeon the player is on
@@ -697,7 +725,7 @@ export class AppComponent implements OnInit {
                   this.enemies[this.dungeonFloor].health = 10;
                   break;
                 case 1:
-                  this.enemies[this.dungeonFloor].health = 20;
+                  this.enemies[this.dungeonFloor].health = 30;
                   break;
                 case 2:
                   this.enemies[this.dungeonFloor].health = 50;
@@ -709,12 +737,12 @@ export class AppComponent implements OnInit {
           else if (this.dungeonFloor == 2 && JSON.stringify(this.bossLocation).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
                 this.playerLocation[0] -= 1;
                 this.paintPlayer();
+                this.bossGrowlSound();
                 var bossHit = Math.floor(Math.random() * (this.enemies[3].maxAttack - this.enemies[3].minAttack + 1)) + this.enemies[3].minAttack;
                 this.player.health = this.player.health - bossHit;
                 // If the player dies, end the game
                 if (this.player.health <= 0) {
-                  // Add Game Over functionality here
-                  this.gameMessage = "You Lose";
+                  this.youLose();
                 }
                 // Player hits between a range of damage * player level
                 // Enemy health pool based on which level of the dungeon the player is on
@@ -724,9 +752,9 @@ export class AppComponent implements OnInit {
                 // Boss: 200
                 var playerHit = Math.floor(Math.random() * (this.player.maxAttack * this.player.level - this.player.minAttack * this.player.level + 1)) + this.player.minAttack * this.player.level;
                 this.enemies[3].health = this.enemies[3].health - playerHit;
-                // If the enemy dies, move into his space and gain XP
+                // If the boss dies, end the game victoriously
                 if (this.enemies[3].health <= 0) {
-                  this.gameMessage = "You Win!";
+                  this.youWin();
                 }
            }
           // If the space the player is moving into is not a wall or an enemy, move player into that new space 
@@ -734,19 +762,25 @@ export class AppComponent implements OnInit {
             this.paintPlayer();
             // If player steps on key, add to player inventory
             if (JSON.stringify(this.keyTile) == JSON.stringify(this.playerLocation)) {
+              this.keyTile = [];
               this.player.hasKey = true;
               this.numberOfKeys = 1;
+              this.pickUpItemSound();
             }
             // If player steps on stairs
             if (this.playerLocation[0] == this.stairBossTile[0] && this.playerLocation[1] == this.stairBossTile[1]) {
               this.changeFloor();
+              this.openDoorEnterStairSound();
             }
             // If player steps on potion, increase player health by 25
             if (JSON.stringify(this.potionTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
               this.player.health += 25;
+              this.pickUpItemSound();
             }
             // If player steps on weapon, upgrade weapon
             if (JSON.stringify(this.weaponTile) == JSON.stringify(this.playerLocation)) {
+              this.weaponTile = [];
+              this.pickUpItemSound();
               switch(this.player.weapon) {
                 case 'Iron Sword':
                   this.player.weapon = 'Mithril Sword';
@@ -791,12 +825,12 @@ export class AppComponent implements OnInit {
             // Floor 0: 4-6 damage
             // Floor 1: 8-10 damage
             // Floor 2: 12-14 damage
+            this.impGrowlSound();
             var enemyHit = Math.floor(Math.random() * (this.enemies[this.dungeonFloor].maxAttack - this.enemies[this.dungeonFloor].minAttack + 1)) + this.enemies[this.dungeonFloor].minAttack;
             this.player.health = this.player.health - enemyHit;
             // If the player dies, end the game
             if (this.player.health <= 0) {
-              // Add Game Over functionality here
-              this.gameMessage = "You Lose";
+              this.youLose();
             }
             // Player hits between a range of damage * player level
             // Enemy health pool based on which level of the dungeon the player is on
@@ -821,25 +855,24 @@ export class AppComponent implements OnInit {
                   this.enemies[this.dungeonFloor].health = 10;
                   break;
                 case 1:
-                  this.enemies[this.dungeonFloor].health = 20;
+                  this.enemies[this.dungeonFloor].health = 30;
                   break;
                 case 2:
                   this.enemies[this.dungeonFloor].health = 50;
                   break;
-              }
-              
+              }    
             }
           }
           // If player collides with boss enemy
           else if (this.dungeonFloor == 2 && JSON.stringify(this.bossLocation).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
                 this.playerLocation[1] -= 1;
                 this.paintPlayer();
+                this.bossGrowlSound();
                 var bossHit = Math.floor(Math.random() * (this.enemies[3].maxAttack - this.enemies[3].minAttack + 1)) + this.enemies[3].minAttack;
                 this.player.health = this.player.health - bossHit;
                 // If the player dies, end the game
                 if (this.player.health <= 0) {
-                  // Add Game Over functionality here
-                  this.gameMessage = "You Lose";
+                  this.youLose();
                 }
                 // Player hits between a range of damage * player level
                 // Enemy health pool based on which level of the dungeon the player is on
@@ -849,9 +882,9 @@ export class AppComponent implements OnInit {
                 // Boss: 200
                 var playerHit = Math.floor(Math.random() * (this.player.maxAttack * this.player.level - this.player.minAttack * this.player.level + 1)) + this.player.minAttack * this.player.level;
                 this.enemies[3].health = this.enemies[3].health - playerHit;
-                // If the enemy dies, move into his space and gain XP
+                // If the boss dies, end the game victoriously
                 if (this.enemies[3].health <= 0) {
-                  this.gameMessage = "You Win!";
+                  this.youWin();
                 }
            }
           // If the space the player is moving into is not a wall or an enemy, move player into that new space 
@@ -859,20 +892,25 @@ export class AppComponent implements OnInit {
             this.paintPlayer();
             // If player steps on key, add to player inventory
             if (JSON.stringify(this.keyTile) == JSON.stringify(this.playerLocation)) {
+              this.keyTile = [];
               this.player.hasKey = true;
               this.numberOfKeys = 1;
+              this.pickUpItemSound();
             }
             // If player steps on stairs
             if (this.dungeonFloor < 2 && this.playerLocation[0] == this.stairBossTile[0] && this.playerLocation[1] == this.stairBossTile[1]) {
               this.changeFloor();
-               // If player contacts boss enemy
+              this.openDoorEnterStairSound();
             }
             // If player steps on potion, increase player health by 25
             if (JSON.stringify(this.potionTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
               this.player.health += 25;
+              this.pickUpItemSound();
             }
             // If player steps on weapon, upgrade weapon
             if (JSON.stringify(this.weaponTile) == JSON.stringify(this.playerLocation)) {
+              this.weaponTile = [];
+              this.pickUpItemSound();
               switch(this.player.weapon) {
                 case 'Iron Sword':
                   this.player.weapon = 'Mithril Sword';
@@ -896,6 +934,29 @@ export class AppComponent implements OnInit {
           break;
       }
   }
+
+
+// ***** Audio Functions ***** //
+  impGrowlSound() {
+    var audio = new Audio('../assets/ImpGrowl.wav');
+    audio.play();
+  }
+
+  bossGrowlSound() {
+    var audio = new Audio('../assets/BossGrowl.wav');
+    audio.play();
+  }
+
+  pickUpItemSound() {
+    var audio = new Audio('../assets/PickUpItem.wav');
+    audio.play();
+  }
+
+  openDoorEnterStairSound() {
+    var audio = new Audio('../assets/DoorsStairs.wav');
+    audio.play();
+  }
+// ***** End Audio Functions *****//
 
   // Determines room player is currently in and shadows all other rooms
   determineCurrentRoom() {
@@ -1024,7 +1085,7 @@ export class AppComponent implements OnInit {
     }
   }
 
-  // Function that runs when player moves to another floor
+  // Function that runs when player moves to another floor of the dungeon
   changeFloor() {
     this.player.hasKey = false;
     this.numberOfKeys = 0;
@@ -1045,9 +1106,9 @@ export class AppComponent implements OnInit {
     }
     this.potionTiles = [];
     // Paint over old enemy tiles
-    for (let i = 0; i < this.enemies.length; i++) {
+    for (let i = 0; i < this.enemyTiles.length; i++) {
       this.ctx.fillStyle = "#555555";
-      this.ctx.fillRect(this.enemies[i][0] * 10, this.enemies[i][1] * 10, 10, 10);
+      this.ctx.fillRect(this.enemyTiles[i][0] * 10, this.enemyTiles[i][1] * 10, 10, 10);
     }
     this.enemyTiles = [];
     this.paintFloorBehindPlayer();
@@ -1079,13 +1140,71 @@ export class AppComponent implements OnInit {
       yLoc += 1;
     }
     // Don't let enemies be placed where hero starts
-    // ***** This will have to be expanded to not allow items to be placed on top of other items *****
     if (xLoc === 5 && yLoc === 5) {
       xLoc += 1;
     }
     return [xLoc, yLoc];
   }
 
+/***** Game over and Game win methods *****/
+
+  youWin() {
+    // Play the Game Win song
+    var audio = new Audio('../assets/GameWin.wav');
+    audio.play();
+    // Open the Game Win modal
+    this.openGameWinDialog();
+    // Reset player stats
+    this.player.hasKey = false;
+    this.player.health = 50;
+    this.player.level = 1;
+    this.player.weapon = "Iron Sword";
+    this.player.xp = 0;
+    // Clean up old array of enemies in case of game restart
+    this.enemyTiles = [];
+    // Clean up old weapon array in case of game restart
+    this.weaponTile = [];
+    // Clean up old array of potions in case of game restart
+    this.potionTiles = [];
+    // Clean up old key array in case of game restart
+    this.keyTile = [];
+    // Reset floor number
+    this.dungeonFloor = 0;
+    // Reset number of Keys
+    this.numberOfKeys = 0;
+    // Reset the dungeon
+    this.buildBoard();
+  }
+
+  youLose() {
+    // Play the Game Over song
+    var audio = new Audio('../assets/GameOver.wav');
+    audio.play();
+    // Open the Game Over modal
+    this.openGameOverDialog();
+    // Reset player stats
+    this.player.hasKey = false;
+    this.player.health = 50;
+    this.player.level = 1;
+    this.player.weapon = "Iron Sword";
+    this.player.xp = 0;
+    // Clean up old array of enemies in case of game restart
+    this.enemyTiles = [];
+    // Clean up old weapon array in case of game restart
+    this.weaponTile = [];
+    // Clean up old array of potions in case of game restart
+    this.potionTiles = [];
+    // Clean up old key array in case of game restart
+    this.keyTile = [];
+    // Reset floor number
+    this.dungeonFloor = 0;
+    // Reset number of Keys
+    this.numberOfKeys = 0;
+    // Reset the dungeon
+    this.buildBoard();
+  }
+
+/*****************************************/
 
 /***** Cell painting functions *****/
   paintPlayer() {
@@ -1125,28 +1244,12 @@ export class AppComponent implements OnInit {
 /***** End cell painting functions *****/
 
 
-/***** TODO *****/
-  // - Heart sprite
-  // - XP sprite
-  // - Add instructions modal
-  // - Add story modal with music
+/***** Known Bugs *****/
+
   // - Key still sometimes gets generated in locked room
+  // - Clean up cells after player picks up items: potions, imps
+  // - Refactor repetitive code
   
 /****************/
-
-
-/***** Optional TODO *****/
-
-  // - When player unlocks a door cell, remove all door cells and paint floor gray
-  // - Further tuning of the damage model
-  // - Improve game win functionality
-  // - Improve game loss functionality
-  // - Refactor repetitive code
-  // - Zilda sprite for game win screen
-
-/*************************/
-
-
-
 }
 
