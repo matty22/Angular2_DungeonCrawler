@@ -1,4 +1,8 @@
 import { Component, OnInit } from '@angular/core'; 
+import { MdDialog } from '@angular/material';
+
+import { StoryModalComponent } from './story-modal/story-modal.component';
+import { InstructionsModalComponent } from './instructions-modal/instructions-modal.component';
 import { Player } from './player';
 import { Enemy } from'./enemy';
 
@@ -8,6 +12,17 @@ import { Enemy } from'./enemy';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
+
+  constructor(public dialog: MdDialog,
+              public instructionsDialog: MdDialog) {}
+
+  openDialog() {
+    let dialogRef = this.dialog.open(StoryModalComponent);
+  }
+
+  openInstructionsDialog() {
+    let dialogRef = this.instructionsDialog.open(InstructionsModalComponent);
+  }
 
   canvas: any;
   ctx: any;
@@ -1111,9 +1126,10 @@ export class AppComponent implements OnInit {
 
 
 /***** TODO *****/
-
-  // - Add instructions area
-  // - Add story area with music
+  // - Heart sprite
+  // - XP sprite
+  // - Add instructions modal
+  // - Add story modal with music
   // - Key still sometimes gets generated in locked room
   
 /****************/

@@ -2,8 +2,8 @@
                       Player XP: {{ player.xp }}<br>
                       <img width="20" height="20" src='../assets/Sword.png'>: {{ player.weapon }}<br>
                       <img width="20" height="20" src="../assets/Key.png">: {{ numberOfKeys }}
-  <div><button color="primary" md-raised-button>Start button</button></div>
-  <div><button color="accent" md-raised-button>Instructions buttons</button></div>
+  <div><button color="primary" md-raised-button (click)="openDialog()">Start Adventure</button></div>
+  <div><button color="accent" md-raised-button (click)="openInstructionsDialog()">Instructions</button></div>
 </div>
 <div id="canvasContainer" (window:keydown)="movePlayer($event)">
   <canvas id="shadowOverlay" width="860" height="640"></canvas>

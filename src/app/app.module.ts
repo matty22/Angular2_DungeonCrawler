@@ -4,16 +4,24 @@ import { MaterialModule } from '@angular/material';
 
 
 import { AppComponent } from './app.component';
+import { StoryModalComponent } from './story-modal/story-modal.component';
+import { InstructionsModalComponent } from './instructions-modal/instructions-modal.component';
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    StoryModalComponent,
+    InstructionsModalComponent
   ],
   imports: [
     BrowserModule,
     MaterialModule.forRoot()
   ],
   providers: [],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
+  entryComponents: [
+    StoryModalComponent,
+    InstructionsModalComponent
+  ]
 })
 export class AppModule { }
