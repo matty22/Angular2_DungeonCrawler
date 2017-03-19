@@ -409,6 +409,7 @@ export class AppComponent implements OnInit {
 
   // Move player upon key press
   movePlayer(pressedKey) {
+      pressedKey.preventDefault();
       switch (pressedKey.keyCode) {
         // Player pushes left arrow key
         case 37:
@@ -456,6 +457,7 @@ export class AppComponent implements OnInit {
               }
               this.paintFloorBehindPlayer();
               this.playerLocation[0] -= 1;
+              this.removeImp();
               this.paintPlayer();
               // Reset enemy health so it is ready for the next enemy
               switch(this.dungeonFloor) {
@@ -512,6 +514,7 @@ export class AppComponent implements OnInit {
             }
             // If player steps on potion, increase player health by 25
             if (JSON.stringify(this.potionTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
+              this.removePotion();
               this.player.health += 25;
               this.pickUpItemSound();
             }
@@ -587,6 +590,7 @@ export class AppComponent implements OnInit {
               }
               this.paintFloorBehindPlayer();
               this.playerLocation[1] -= 1;
+              this.removeImp();
               this.paintPlayer();
               // Reset enemy health so it is ready for the next enemy
               switch(this.dungeonFloor) {
@@ -643,6 +647,7 @@ export class AppComponent implements OnInit {
             }
             // If player steps on potion, increase player health by 25
             if (JSON.stringify(this.potionTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
+              this.removePotion();
               this.player.health += 25;
               this.pickUpItemSound();
             }
@@ -718,6 +723,7 @@ export class AppComponent implements OnInit {
               }
               this.paintFloorBehindPlayer();
               this.playerLocation[0] += 1;
+              this.removeImp();
               this.paintPlayer();
               // Reset enemy health so it is ready for the next enemy
               switch(this.dungeonFloor) {
@@ -774,6 +780,7 @@ export class AppComponent implements OnInit {
             }
             // If player steps on potion, increase player health by 25
             if (JSON.stringify(this.potionTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
+              this.removePotion();
               this.player.health += 25;
               this.pickUpItemSound();
             }
@@ -848,6 +855,7 @@ export class AppComponent implements OnInit {
               }
               this.paintFloorBehindPlayer();
               this.playerLocation[1] += 1;
+              this.removeImp();
               this.paintPlayer();
               // Reset enemy health so it is ready for the next enemy
               switch(this.dungeonFloor) {
@@ -904,6 +912,7 @@ export class AppComponent implements OnInit {
             }
             // If player steps on potion, increase player health by 25
             if (JSON.stringify(this.potionTiles).indexOf(JSON.stringify(this.playerLocation)) !== -1) {
+              this.removePotion();
               this.player.health += 25;
               this.pickUpItemSound();
             }
@@ -957,6 +966,25 @@ export class AppComponent implements OnInit {
     audio.play();
   }
 // ***** End Audio Functions *****//
+
+
+  // Function to remove potion from potionTiles array when player picks it up
+  removePotion() {
+    for (var i = 0; i < this.potionTiles.length; i++) {
+      if (this.potionTiles[i][0] == this.playerLocation[0] && this.potionTiles[i][1] == this.playerLocation[1]) {
+        this.potionTiles.splice(i, 1);
+      }
+    }
+  }
+
+  // Function to remove enemy from enemyTiles array when player defeats Imp
+  removeImp() {
+    for (var i = 0; i < this.enemyTiles.length; i++) {
+      if (this.enemyTiles[i][0] == this.playerLocation[0] && this.enemyTiles[i][1] == this.playerLocation[1]) {
+        this.enemyTiles.splice(i, 1);
+      }
+    }
+  }
 
   // Determines room player is currently in and shadows all other rooms
   determineCurrentRoom() {
